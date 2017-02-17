@@ -7,8 +7,7 @@ readonly SETCOLOR_NORMAL="echo -en $Color_Off"
 readonly SETCOLOR_BLUE="echo -en $BBlue"
 readonly SETCOLOR_CYAN="echo -en $BCyan"
 readonly SETCOLOR_RED="echo -en $Red"
-#боксы проекта
-#g_off sggf | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box
+
 if [ -f ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh ]; then
     . ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh
 fi
@@ -55,10 +54,6 @@ variable_check_digit () {
   fi
 
 }
-
-
-
-
 
 #Синк  на бокс
 
@@ -179,10 +174,14 @@ pkill -f ping
 #elif [[ -z $3 ]]; then
 else
   case "$2" in
-    sbor|s) echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Определяем плагин и IP сборщика..."; readlink connect/plugin/Proxy.jar |basename `cat ` | sed "s/Proxy.jar//" |grep -i `awk "{ print $1 }"` connect/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 ' 
-    color_check ;;
-    cam|c)  echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер"';; 
-    *) echo -e "help";;
+    sbor|s) echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Определяем плагин и IP сборщика..."; readlink connect/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 ' 
+     ;;
+    cam|c) echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер";  echo -n "Введите номер коннекта: " ; read cn ; case $cn in 
+                  1) echo -e "connect" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ;;  
+                  2|3|4|5|6|7|8|9) echo -e "connect$cn"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect$cn/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ;; esac'
+    ;; 
+    *) echo -e "help"
+    ;;
   esac
 #else
   #
@@ -340,3 +339,6 @@ alarms_function () {
   #done
 
 }
+
+#боксы проекта
+#g_off sggf | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box
