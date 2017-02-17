@@ -175,11 +175,24 @@ pkill -f ping
 else
   case "$2" in
     sbor|s) echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Определяем плагин и IP сборщика..."; readlink connect/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 ' 
-     ;;
-    cam|c) echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер";  echo -n "Введите номер коннекта: " ; read cn ; case $cn in 
-                  1) echo -e "connect" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ;;  
-                  2|3|4|5|6|7|8|9) echo -e "connect$cn"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect$cn/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ;; esac'
+     color_check ;;
+    cam|c) if [ -z $3 ]
+            then
+              echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер";  echo -n "Введите номер коннекта: " ; read cn ; case $cn in 
+                              1|"") echo -e "connect" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ; echo "done" ;;  
+                              2|3|4|5|6|7|8|9) echo -e "connect$cn"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect$cn/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done" ;; 
+
+                            esac'
+            else
+              local cn=$3
+                        echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер"; case "$cn" in 
+                              1|"") echo -e "connect" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done" ;;  
+                              2|3|4|5|6|7|8|9) echo -e connect"$cn"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect"$cn"/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; ecyj "done" ;; 
+
+                            esac'
+            fi
     ;; 
+
     *) echo -e "help"
     ;;
   esac
