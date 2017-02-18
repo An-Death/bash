@@ -1,11 +1,8 @@
 
-<<<<<<< HEAD
 if [ -f ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh ]; then
     . ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh
 fi
 
-=======
->>>>>>> 6b293469286b1616614658893cdeb3a960cc6368
 source ~/Документы/scr/.bash_source_color.cfg
 
 readonly SETCOLOR_SUCCESS="echo -en $BGreen"
@@ -15,13 +12,7 @@ readonly SETCOLOR_BLUE="echo -en $BBlue"
 readonly SETCOLOR_CYAN="echo -en $BCyan"
 readonly SETCOLOR_RED="echo -en $Red"
 
-<<<<<<< HEAD
 
-=======
-if [ -f ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh ]; then
-    . ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh
-fi
->>>>>>> 6b293469286b1616614658893cdeb3a960cc6368
 
 
 #Выводит ОК Fail
@@ -155,7 +146,6 @@ function g () {
 ## пинг бокса, пинг сборщика,пинг камер.
 
 function gping () {
-<<<<<<< HEAD
   # переменные
   local connect=
   local choose=
@@ -258,68 +248,6 @@ function gping () {
 #  echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 ' echo param'"$2"' && echo param'"$3"''
 #}
 
-=======
-
-  variable_check $*
-
-if [ -z $2 ]
-  then
-  g100_tun $1
-
-  g_ips=$(nslookup gbox-$1 | grep Address |sed '/127.0.1.1/d'| sed 's/Address:\ //g') 
-
-  for ip_g in `echo "$g_ips"`; do
-    echo "Пингуем $ip_g"
-    ping "$ip_g" &
-  done
-
-gping_stop_flag=false;
-
-trap ctrl_c INT
-function ctrl_c() {
-        gping_stop_flag=true
-}
-
-while ( ! read ) | [ "$gping_stop_flag" = true ]
-do
-  sleep 1
-done
-
-pkill -f ping
-#elif [[ -z $3 ]]; then
-else
-  case "$2" in
-    sbor|s) echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Определяем плагин и IP сборщика..."; readlink connect/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 ' 
-     color_check ;;
-    cam|c) if [ -z $3 ]
-            then
-              echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер";  echo -n "Введите номер коннекта: " ; read cn ; case $cn in 
-                              1|"") echo -e "connect" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ; echo "done" ;;  
-                              2|3|4|5|6|7|8|9) echo -e "connect$cn"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect$cn/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done" ;; 
-
-                            esac'
-            else
-              local cn=$3
-                        echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер"; case "$cn" in 
-                              1|"") echo -e "connect" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done" ;;  
-                              2|3|4|5|6|7|8|9) echo -e connect"$cn"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect"$cn"/connect.conf|  grep -vE "recorder" >/tmp/cam ; for f in `cat /tmp/cam` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; ecyj "done" ;; 
-
-                            esac'
-            fi
-    ;; 
-
-    *) echo -e "help"
-    ;;
-  esac
-#else
-  #
-  #case $3 in
-   # 1) echo '1 -$3';;
-  #  [[:digit:]]) echo 'e - $3' ;;
- # esac
-fi
-}
->>>>>>> 6b293469286b1616614658893cdeb3a960cc6368
 
 #Конвертер
 conv () {
@@ -349,11 +277,7 @@ conv () {
 #Ситуационный, надо доделать.
 con_kill () {
 
-<<<<<<< HEAD
   while ! `sshpass -p  ${DEFAULT_GBOX_PASS} ssh ts@gbox-230 "pkill -f connect"` 
-=======
-  while ! `sshpass -p of1Aengo ssh ts@gbox-230 "pkill -f connect"` 
->>>>>>> 6b293469286b1616614658893cdeb3a960cc6368
     do 
       sleep 45
     done
@@ -474,7 +398,6 @@ alarms_function () {
 }
 
 #боксы проекта
-<<<<<<< HEAD
 #g_off sggf | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box
 
 
@@ -521,7 +444,4 @@ func_kye_check () {
  printf '<%s>\n' "$@"
  
  # End of file
-}
-=======
-#g_off sggf | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box
->>>>>>> 6b293469286b1616614658893cdeb3a960cc6368
+} 
