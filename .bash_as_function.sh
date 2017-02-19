@@ -1,8 +1,4 @@
 
-if [ -f ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh ]; then
-    . ${PATH_FOR_BR9K_SCREEPTS}/.bash_as_function_secure.sh
-fi
-
 source ~/Документы/scr/.bash_source_color.cfg
 
 readonly SETCOLOR_SUCCESS="echo -en $BGreen"
@@ -147,14 +143,45 @@ function g () {
 
 function gping () {
   # переменные
+  local _help_name="gping"
   local connect=
   local choose=
   local camera=
   local camera_check=
+  local cn=
+  local _help_gping=
   # проверка ввода
   variable_check $*
+
+      while ! input_chek=true
+      do
+        if [[ $2 =~ ^[0-9]$ ]]
+          then
+            case $2 in
+              0|1) connect= 
+                func_itr 1 ;;
+              2|3|4|5|6|7|8|9) connect=$2
+                func_itr 1 ;;
+              *) func_help $_help_name
+              ;;  
+            esac
+          else
+            case $2 in
+              sbor|s|-s) choose=$2 
+                func_itr 1 ;;
+              cam|camera|c|-c|-cam) choose=$2 
+                func_itr 1 ;;
+              h|-h|help|--help) func_help $_help_name
+                ;;
+            esac
+        fi
+      done
+
+  if [ $1 = "h" ] || [ $1 = "help" ] || [ $1 = "-h" ] || [ $1 = "--help" ]
+    then
+      func_help $_help_name && return 1  
   #если нет второй переменной пингуется бокс
-  if [ -z $2 ]
+  elif [ -z $2 ] 
   then
     g100_tun $1
 
@@ -181,65 +208,49 @@ function gping () {
     pkill -f ping
   #Иначе определяется вторая переменная ввода   
   else
-    #остановка цикла определения
-    itr () {
-      if [[ 1 -eq $1 ]]
-        then
-        input_chek=true
-      else
-        input_chek=false
-      fi
-    }
 
-    while input_chek=false
-      do
-        if [ $2 in [0-9] ]
-          then
-            case $2 in
-              0|1) connect= 
-                itr 1;;
-              2|3|4|5|6|7|8|9) connect=$2
-                itr 1;;
-              *) echo "help" && exit 1
-              ;;  
-            esac
-        else
-            case $2 in
-              sbor|s|-s) choose=$2 
-                itr 1;;
-              cam|camera|c|-c|-cam) choose=$2
-                itr 1;;
-              h|-h|help|--help) echo "help" && exit 1
-                ;;
-            esac
-        fi
-      done
     #Работа с переменной    
     case "$2" in
       sbor|s) func_ping_sbor $1 $2 
       color_check ;;
-      cam|c) if [ -z $3 ]
-              then 
-                echo "Введите номер коннекта: " ; read cn
+      cam|c)  if [ -z $3 ]
+                then 
+                # echo "Введите номер коннекта: " ; read cn
+                cn=1
                 func_ping_camera $1 $2
+              elif [ $3 = "-c" ] || [ $3 = 'cn' ]
+                then
+                cn=$4
+                func_ping_camera $1 $2  
               else
-                local cn=$3
+                cn=$3
                 func_ping_camera $1 $2
               fi
         ;; 
       *) echo -e "help"
         ;;
     esac
+
+
   fi
   func_ping_sbor () {
-    echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Определяем плагин и IP сборщика..."; readlink connect/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 ' 
+    echo -e "\e[0;1m""Подключаемся к удалённому серверу...""\e[0m" && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 ' 
   }
 
   func_ping_camera () {
-    echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo "Опеределяем IP камер"; case '"$cn"' in 
-                  1|"") echo -e "connect" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf | for f in `grep -vE "recorder"` ; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ; echo "done" ;;  
-                  2|3|4|5|6|7|8|9) echo -e connect'"$cn"'; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf | for f in `grep -vE "recorder"`; do echo $f && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done" ;; 
+    echo -e "\e[0;1m""Подключаемся к удалённому серверу...""\e[0m" && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo -e "\e[0;1m""Опеределяем IP камер:""\e[0m""\n" ; case '"$cn"' in 
+                  1) echo -e "\e[34;1m""connect/" "\e[0m""\n" ; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect/connect.conf | for f in `grep -vE "recorder"` ; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done ; echo "done" ;;  
+                  2|3|4|5|6|7|8|9) echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done" ;; 
                   esac'
+  }
+
+  func_itr () { #остановка цикла определения
+    if [ $1 -eq 1 ]
+      then
+        input_chek=true
+      else
+        input_chek=false
+    fi
   }
 }
 
@@ -405,7 +416,7 @@ func_kye_check () {
 #test проверка ключей
 # код не мой, юзается для тестирования и примера.
     # Usage info
-    show_help() {
+    show_help_gping() {
     echo "
     Usage: ${0##*/} [-hv] [-f OUTFILE] [FILE]...
     Do stuff with FILE and write the result to standard output. With no FILE
@@ -427,12 +438,12 @@ func_kye_check () {
  
  while getopts hvf: opt; do
      case $opt in
-        h) show_help
+        h) show_help_gping
             exit 0
              ;;
         v)  verbose=$((verbose+1));;
         f)  output_file=$OPTARG ;;
-        *) show_help >&2
+        *) show_help_gping >&2
              exit 1
              ;;
      esac
