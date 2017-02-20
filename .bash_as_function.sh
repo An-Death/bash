@@ -139,14 +139,15 @@ function gping () {
   local choose=
   local cn=
   local cam_num=
+  local grep_cam=
   #переменные для составления запроса
   
   #choose insertion
   func_do_command_unterpritator () {
     
     local sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
-    local cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf | for f in `grep -vE "recorder"`; do $cam_num -e "\e[32;1m"$f "\e[0m" && $cam_num $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
-    
+    local cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf $grep_cam | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
+    local moxa_ping="echo -e $BWhilte connect""$cn""/ $Color_Off \n; head ~/connect/log/moxa_`grep '^well=\|^wellbore=' ~/connect/connect.conf | sed 's/wel.*=//;s/\ /_/g' | sed -e ':a;N;$!ba;s/\n/_/g'`.log | ping `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"`' "
     local do_command=
     local stay='bash -l'
 
@@ -156,6 +157,7 @@ function gping () {
       #sborshik_stay) do_command=$sborshik_ping  && func_connect_to '$do_command' ;;
       camera) do_command=$cameras_ping ; func_connect_to $do_command ;;
       #camera_stay) do_command='$cameras_ping ; $stay ' && func_connect_to '$do_command' ;;
+      moxa) do_command=$moxa_ping ; func_connect_to $do_command ;;
       101) func_help $_func_name ;;
     esac
   }
@@ -213,14 +215,27 @@ function gping () {
               *) choose=help
                       break ;;
             esac
-        fi
-        case $@ in
-          --cam_num) echo "Введите номер камеры" ; read cam_num ; if $ 
-          esac                
+        fi             
       done
+#      if [ $4 = "--set_cam" ] || [ $5 = "--set_cam" ]
+#         then
+#          echo "Введите номер камеры:  "  
+#          read cam_num 
+#            if  ! [[ $cam_num =~ ^[0-9]$ ]] || [ $cam_num = "all" ]
+#              then 
+#                echo "Необходимо ввести номер камеры!" && return 1
+#              fi
+#      fi
+#
+#      if [ $cam_num != "all" ] || [[ $cam_num =~ ^[0-9]$ ]]
+#        then
+#        grep_cam='| grep $cam_num'
+#      else
+#        grep_cam=
+#      fi
 
   func_do_command_unterpritator $choose
-
+}
   gping_row () {
 
     g100_tun $1
@@ -265,7 +280,6 @@ function gping () {
                   esac'
   }
 
-}
 
 
 #Конвертер
