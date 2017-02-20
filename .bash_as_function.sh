@@ -136,20 +136,19 @@ function gping () {
   # переменные
   local _func_name="gping"
   gbox_num=$1
-  local connect=
   local choose=
-  local camera=
-  local camera_check=
-  cn=
-  local _help_gping=
-  do_command=
+  local cn=
+  local cam_num=
   #переменные для составления запроса
-  stay='bash -l'
-  #choose insertion
-   func_do_command_unterpritator () { 
-    sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
-    cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
   
+  #choose insertion
+  func_do_command_unterpritator () {
+    
+    local sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
+    local cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf | for f in `grep -vE "recorder"`; do $cam_num -e "\e[32;1m"$f "\e[0m" && $cam_num $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
+    
+    local do_command=
+    local stay='bash -l'
 
     case $choose in
       row) gping_row $gbox_num ;;
@@ -162,7 +161,6 @@ function gping () {
   }
 
   # проверка ввода
-  #variable_check $*
 
       while [ 1 ]
       do
@@ -177,7 +175,7 @@ function gping () {
         elif [ -z $2 ] 
           then
           choose=row
-          break  
+          break
         else
           case "$2" in
               sbor|s) choose=sborshik
@@ -207,7 +205,7 @@ function gping () {
                               echo "Введите номер коннекта" ; read cn
                             else
                               cn=$4
-                          fi
+                          fi    
                       else
                         cn=$3
                       fi
@@ -216,6 +214,9 @@ function gping () {
                       break ;;
             esac
         fi
+        case $@ in
+          --cam_num) echo "Введите номер камеры" ; read cam_num ; if $ 
+          esac                
       done
 
   func_do_command_unterpritator $choose
