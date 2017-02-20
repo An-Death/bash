@@ -26,7 +26,6 @@ color_check () {
     echo
   fi
 }
-
 variable_check () {
 
   if [ -z "$1" ]
@@ -34,12 +33,6 @@ variable_check () {
      echo "-Аргумент #1 не был передан функции."
      return 1;
    fi
-  if [ -f "$1" ]
-    then 
-      mass=1
-    else
-      mass=0
-  fi
 }
 variable_check_digit () {
 
@@ -50,11 +43,9 @@ variable_check_digit () {
   else 
     return 0    
   fi
-
 }
 
 #Синк  на бокс
-
 function rsync_b  () {
  
 #переменные функции
@@ -143,46 +134,94 @@ function g () {
 
 function gping () {
   # переменные
-  local _help_name="gping"
+  local _func_name="gping"
+  gbox_num=$1
   local connect=
   local choose=
   local camera=
   local camera_check=
-  local cn=
+  cn=
   local _help_gping=
-  # проверка ввода
-  variable_check $*
+  do_command=
+  #переменные для составления запроса
+  stay='bash -l'
+  #choose insertion
+   func_do_command_unterpritator () { 
+    sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
+    cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
+  
 
-      while ! input_chek=true
+    case $choose in
+      row) gping_row $gbox_num ;;
+      sborshik) do_command=$sborshik_ping ; func_connect_to $do_command ;;
+      #sborshik_stay) do_command=$sborshik_ping  && func_connect_to '$do_command' ;;
+      camera) do_command=$cameras_ping ; func_connect_to $do_command ;;
+      #camera_stay) do_command='$cameras_ping ; $stay ' && func_connect_to '$do_command' ;;
+      101) func_help $_func_name ;;
+    esac
+  }
+
+  # проверка ввода
+  #variable_check $*
+
+      while [ 1 ]
       do
-        if [[ $2 =~ ^[0-9]$ ]]
+        if [ -z $1 ]
           then
-            case $2 in
-              0|1) connect= 
-                func_itr 1 ;;
-              2|3|4|5|6|7|8|9) connect=$2
-                func_itr 1 ;;
-              *) func_help $_help_name
-              ;;  
-            esac
-          else
-            case $2 in
-              sbor|s|-s) choose=$2 
-                func_itr 1 ;;
-              cam|camera|c|-c|-cam) choose=$2 
-                func_itr 1 ;;
-              h|-h|help|--help) func_help $_help_name
-                ;;
+            echo "-Аргумент #1 не был передан функции."
+            return 1;
+        elif [ $1 = "h" ] || [ $1 = "help" ] || [ $1 = "-h" ] || [ $1 = "--help" ] || [[ $gbox_num =~ ^[^0-9]{1,3}$ ]]
+          then
+            choose=101
+            break
+        elif [ -z $2 ] 
+          then
+          choose=row
+          break  
+        else
+          case "$2" in
+              sbor|s) choose=sborshik
+                      if [ -z $3 ]
+                        then 
+                        cn=  
+                      elif [ $3 = "-c" ] || [ $3 = 'cn' ]
+                        then
+                          if [ -z $4 ]
+                            then
+                              echo "Введите номер коннекта" ; read cn
+                            else
+                              cn=$4
+                          fi
+                      else
+                        cn=$3
+                      fi
+                      break ;;   
+              cam|c) choose=camera
+                      if [ -z $3 ]
+                        then
+                          cn=
+                      elif [ $3 = "-c" ] || [ $3 = 'cn' ]
+                        then
+                          if [ -z $4 ]
+                            then
+                              echo "Введите номер коннекта" ; read cn
+                            else
+                              cn=$4
+                          fi
+                      else
+                        cn=$3
+                      fi
+                      break ;; 
+              *) choose=help
+                      break ;;
             esac
         fi
       done
 
-  if [ $1 = "h" ] || [ $1 = "help" ] || [ $1 = "-h" ] || [ $1 = "--help" ]
-    then
-      func_help $_help_name && return 1  
-  #если нет второй переменной пингуется бокс
-  elif [ -z $2 ] 
-  then
+  func_do_command_unterpritator $choose
+
+  gping_row () {
+
     g100_tun $1
 
     g_ips=$(nslookup gbox-$1 | grep Address |sed '/127.0.1.1/d'| sed 's/Address:\ //g') 
@@ -206,33 +245,14 @@ function gping () {
     done
 
     pkill -f ping
-  #Иначе определяется вторая переменная ввода   
-  else
+  }
 
-    #Работа с переменной    
-    case "$2" in
-      sbor|s) func_ping_sbor $1 $2 
-      color_check ;;
-      cam|c)  if [ -z $3 ]
-                then 
-                # echo "Введите номер коннекта: " ; read cn
-                cn=1
-                func_ping_camera $1 $2
-              elif [ $3 = "-c" ] || [ $3 = 'cn' ]
-                then
-                cn=$4
-                func_ping_camera $1 $2  
-              else
-                cn=$3
-                func_ping_camera $1 $2
-              fi
-        ;; 
-      *) echo -e "help"
-        ;;
-    esac
+  func_connect_to () {
+    echo -e "$BWhite""Подключаемся к удалённому серверу...""$Color_Off" && pass_g $gbox_num && sshpass -p $pass_for_g ssh -l ts gbox-$gbox_num $do_command
+  }
 
 
-  fi
+  
   func_ping_sbor () {
     echo -e "\e[0;1m""Подключаемся к удалённому серверу...""\e[0m" && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 'echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 ' 
   }
@@ -244,20 +264,7 @@ function gping () {
                   esac'
   }
 
-  func_itr () { #остановка цикла определения
-    if [ $1 -eq 1 ]
-      then
-        input_chek=true
-      else
-        input_chek=false
-    fi
-  }
 }
-
-
-#test_func () {
-#  echo "Подключаемся к удалённому серверу..." && pass_g $1 && sshpass -p $pass_for_g ssh -l ts gbox-$1 ' echo param'"$2"' && echo param'"$3"''
-#}
 
 
 #Конвертер
@@ -409,7 +416,27 @@ alarms_function () {
 }
 
 #боксы проекта
-#g_off sggf | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box
+get_boxes () {
+
+  variable_check $*
+
+  cdwork && g_off $1 | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box.src
+  
+  if [ -z $2 ]
+    then
+    return 0
+  elif [ $2 = "-s" ]
+    then
+      _box
+  else
+    return 0
+  fi
+
+  _box () {
+    cdwork && cat box.src
+  }
+
+}
 
 
 func_kye_check () {
@@ -456,3 +483,4 @@ func_kye_check () {
  
  # End of file
 } 
+
