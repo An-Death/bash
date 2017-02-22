@@ -147,7 +147,7 @@ function gping () {
     
     local sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
     local cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf $grep_cam | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
-    local moxa_ping="echo -e $BWhilte connect""$cn""/ $Color_Off \n; head ~/connect/log/moxa_`grep '^well=\|^wellbore=' ~/connect/connect.conf | sed 's/wel.*=//;s/\ /_/g' | sed -e ':a;N;$!ba;s/\n/_/g'`.log | ping `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"`' "
+    #local moxa_ping="echo -e $BWhilte connect""$cn""/ $Color_Off \n; head ~/connect/log/moxa_`grep '^well=\|^wellbore=' ~/connect/connect.conf | sed 's/wel.*=//;s/\ /_/g' | sed -e ':a;N;$!ba;s/\n/_/g'`.log | ping `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"`' "
     local do_command=
     local stay='bash -l'
 
@@ -160,6 +160,9 @@ function gping () {
       moxa) do_command=$moxa_ping ; func_connect_to $do_command ;;
       101) func_help $_func_name ;;
     esac
+
+    #добавление ip moxa в connect.conf
+    # sed -i 's/^bind_port.*/&\n\nmoxa_ip=$ipMOXA/'
   }
 
   # проверка ввода
