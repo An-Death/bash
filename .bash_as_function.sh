@@ -155,15 +155,16 @@ function gping () {
   local cn=
   local cam_num=
   local grep_cam=
-  local moxa_name="grep '^well=\|^wellbore=' ~/connect'"$cn"'/connect.conf | sed 's/wel.*=//;s/\ /_/g' | sed -e ':a;N;$!ba;s/\n/_/g' | sed 's/\ /_/g'"
-  #переменные для составления запроса
+  local well_name="grep '^well=' ~/connect'"$cn"'/connect.conf | sed 's/wel.*=//;s/\ /_/g'"
+  #добавление ip moxa в connect.conf
+  local add_moxa_ip="sed 's/^bind_port.*/&\n\nmoxa_ip=$ipMOXA/' -i connect'"$cn"'/connect.conf"
+
   
-  #choose insertion
   func_do_command_unterpritator () {
-    
+  #переменные для составления запроса
     local sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
     local cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf $grep_cam | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
-    local moxa_ping='echo -e $BWhilte connect'"$cn"'/ $Color_Off "\n" ; if ( grep -m 1 moxa_ip ~/connect'"$cn"'/connect.conf | grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}" >/dev/null ); then ping -c 7 `grep -m 1 moxa_ip connect'"$cn"'/connect.conf | grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; else echo `'"$moxa_name"'` ; grep -a Connection connect/log/moxa_`'"$moxa_name"'`.log | tail -2 |grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}" ; fi '
+    local moxa_ping='echo -e $BWhilte connect'"$cn"'/ $Color_Off "\n" ; if ( grep -m 1 moxa_ip ~/connect'"$cn"'/connect.conf | grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}" >/dev/null ); then ping -c 7 `grep -m 1 moxa_ip connect'"$cn"'/connect.conf | grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; else echo `'"$well_name"'` ; moxa_log=$(ls -t connect'"$cn"'/log/ | grep `'"$well_name"'` | head -1) ; ipMOXA=$(grep -a Connection connect'"$cn"'/log/$moxa_log  | tail -2 |grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"); '"$add_moxa_ip"' ; ping $ipMOXA ; fi '
     local do_command=
     local stay='bash -l'
 
@@ -177,8 +178,7 @@ function gping () {
       101) func_help $_func_name ;;
     esac
 
-    #добавление ip moxa в connect.conf
-    # sed -i 's/^bind_port.*/&\n\nmoxa_ip=$ipMOXA/'
+
   }
 
   # проверка ввода
@@ -247,7 +247,7 @@ function gping () {
                         cn=$3
                       fi
                       break ;;                       
-              *) choose=help
+              *) choose=101
                       break ;;
             esac
         fi             
