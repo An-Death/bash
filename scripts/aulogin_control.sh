@@ -18,4 +18,4 @@ if ( id as | grep -o nopasswdlogin > /dev/null ) || [[ $(date) > $(date -d 18:40
 			else
 				echo -e "$BGreen""[FAIL] Ошибка выполнения скрипта. Отмена контроля не должна происходить ранее 07:45!""$Color_Off" && exit 1
 			fi
-fi 
+fi
