@@ -155,26 +155,25 @@ function gping () {
   local cn=
   local cam_num=
   local grep_cam=
+  local stay=
   
   func_do_command_unterpritator () {
 
   #Переменная для определения имени скв из connect.conf
     local well_name="grep '^well=' ~/connect'"$cn"'/connect.conf | sed 's/wel.*=//;s/\ /_/g'"  
   #добавление ip moxa в connect.conf
-    local add_moxa_ip="sed 's/^bind_port.*/&\n\nmoxa_ip=$ipMOXA/' -i connect'"$cn"'/connect.conf"
+    local add_moxa_ip="if ( grep -o -E '.*moxa_ip.*([0-9]{1,3}[\.]){3}[0-9]{1,3}.*' connect'"$cn"'/connect.conf ) ; then echo 'moxa_ip already exist' ; else sed 's/^bind_port.*/&\n\nmoxa_ip=$ipMOXA/' -i connect'"$cn"'/connect.conf ; fi"
   #переменные для составления запроса
     local sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
     local cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf $grep_cam | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
     local moxa_ping='echo -e $BWhilte connect'"$cn"'/ $Color_Off "\n" ; if ( grep -m 1 moxa_ip ~/connect'"$cn"'/connect.conf | grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}" >/dev/null ); then echo "MOXA: " ; ping -c 7 `grep -m 1 moxa_ip connect'"$cn"'/connect.conf | grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; else echo `'"$well_name"'` ; moxa_log_file=$(ls -t connect'"$cn"'/log/ | grep `'"$well_name"'` | head -1) ; if [ -z $moxa_log_file ] ; then echo -e "Ошибка программы!""\n""Вероятно файла с логами MOXA не существует." ; else  ipMOXA=$(grep -a Connection connect'"$cn"'/log/$moxa_log_file  | tail -2 |grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"); '"$add_moxa_ip"' ; echo "MOXA: "; ping $ipMOXA ; fi; fi '
     local do_command=
-    local stay='bash -l'
+    
 
     case $choose in
       row) gping_row $gbox_num ;;
-      sborshik) do_command=$sborshik_ping ; func_connect_to $do_command ;;
-      #sborshik_stay) do_command=$sborshik_ping  && func_connect_to '$do_command' ;;
-      camera) do_command=$cameras_ping ; func_connect_to $do_command ;;
-      #camera_stay) do_command='$cameras_ping ; $stay ' && func_connect_to '$do_command' ;;
+      sborshik) do_command=$sborshik_ping ; func_connect_to $do_command  ;;
+      camera) do_command=$cameras_ping ; func_connect_to $do_command  ;;
       moxa) do_command=$moxa_ping ; func_connect_to $do_command ;;
       101) func_help $_func_name ;;
     esac
@@ -212,7 +211,8 @@ function gping () {
                             else
                               cn=$4
                           fi
-                      else
+                      elif [[ $3 =~ ^[^0-9]{1}$ ]]
+                        then
                         cn=$3
                       fi
                       break ;;   
@@ -228,7 +228,8 @@ function gping () {
                             else
                               cn=$4
                           fi    
-                      else
+                      elif [[ $3 =~ ^[^0-9]{1}$ ]]
+                        then
                         cn=$3
                       fi
                       break ;; 
@@ -253,22 +254,17 @@ function gping () {
             esac
         fi             
       done
-#      if [ $4 = "--set_cam" ] || [ $5 = "--set_cam" ]
-#         then
-#          echo "Введите номер камеры:  "  
-#          read cam_num 
-#            if  ! [[ $cam_num =~ ^[0-9]$ ]] || [ $cam_num = "all" ]
-#              then 
-#                echo "Необходимо ввести номер камеры!" && return 1
-#              fi
-#      fi
-#
-#      if [ $cam_num != "all" ] || [[ $cam_num =~ ^[0-9]$ ]]
-#        then
-#        grep_cam='| grep $cam_num'
-#      else
-#        grep_cam=
-#      fi
+  # проверка на спец комманды/ не актуально
+  #for input_var in $@
+  #do
+  # if [ $input_var = '--stay' ]
+  #    then
+  #      stay=' bash -l '
+  #  else
+  #    stay=
+  #  fi
+  #done
+  #Здесь должно быть определение камер, но пока нет)
 
   func_do_command_unterpritator $choose
 }
@@ -308,24 +304,47 @@ function gping () {
 #Конвертер
 conv () {
 
+  local _func_name="conv"
+  local convert=
+
   variable_check $*
 
-  original_file="$1"
-  if [ -z $2 ]
-    then 
-    output_file="$1"".out"
-  else
-    output_file="$2"
-  fi
+    if [ $1 = 'help' ] || [ $1 = 'h' ] || [ $1 = '--help' ] || [ $1 = '-h' ] 
+      then
+      func_help $_func_name ; return 1
+    elif [ -f $1 ]
+      then
+        original_file="$1"
+    elif ! [ -f $1 ]
+      then
+        echo "Фаил $1 отсутствует!"
+        return 1
+    fi
 
-  case "$3" in 
-    
-    u) iconv -f WINDOWS-1251 -t UTF-8 -o "$output_file" "$original_file";;
-     # из UTF-8 -> Win-1251
-    w) iconv -f UTF-8 -t WINDOWS-1251 -o "$output_file" "$original_file";;
-      #из Win-1251 -> UTF-8
+    if [ $3 = 'w' ] || [ $3 = 'u' ]
+    then 
+    convert=$3
+    elif [ -z $3 ]
+    then    
+      if [ $2 = 'u' ] || [ $2 = 'w' ]
+        then 
+        output_file="$1.out"
+        convert=$2
+        else
+        output_file="$2"
+        convert=
+      fi
+    fi
+
+
+  case "$convert" in 
+    # из UTF-8 -> Win-1251
+    u) iconv -f UTF-8 -t WINDOWS-1251 -o "$output_file" "$original_file";;
+    #из Win-1251 -> UTF-8
+    w) iconv -f WINDOWS-1251 -t UTF-8 -o "$output_file" "$original_file";;
     *) iconv -f WINDOWS-1251 -t UTF-8 -o "$output_file" "$original_file";;
-  esac
+   esac
+  echo "Convert completed!"
   color_check
 }
 
