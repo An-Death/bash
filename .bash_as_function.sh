@@ -349,6 +349,35 @@ conv () {
 }
 
 
+mantis_comf_tasks () {
+
+  variable_check $*
+  case $1 in
+    start) time_control=true ;;
+    stop) time_control=false ;;
+  esac
+
+  while $time_control
+  do
+    echo "true" && sleep 3
+    until [[ $(date) != $(date -d 17:00:00) ]]
+    do
+      tasks_id=$(mysql -h 192.168.0.100 -P 33056 -umantis -pmantis mantis -e "select mbt.id as 'ID' from mantis_bug_table mbt INNER JOIN mantis_category_table mct ON (mbt.category_id=mct.id) LEFT OUTER JOIN mantis_user_table mut ON (mbt.handler_id=mut.id) where mbt.status=40 and mut.username in ('a.simuskov') order by last_updated desc;")
+      for tasks in $tasks_id 
+      do
+        if [[ $tasks =~ [0-9]{6} ]]
+          then  
+            # echo "$tasks
+            google-chrome --app="http://office.tetra-soft.ru/mantis/view.php?id=${tasks}"
+          #else
+            # echo "is not tasks_id - $tasks"
+        fi
+      done
+    done
+  done  
+
+}
+
 #Ситуационный, надо доделать.
 con_kill () {
 
