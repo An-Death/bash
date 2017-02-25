@@ -6,7 +6,6 @@
 
 mantis_comf_tasks () {
 
-  variable_check $*
   case $1 in
     start) time_control=true ;;
     stop) time_control=false ;;
@@ -14,7 +13,6 @@ mantis_comf_tasks () {
 
   while $time_control
   do
-    echo "true" && sleep 3
     until [[ $(date) != $(date -d 17:00:00) ]] && [[ $(date -d mon) && $(date -d tue) && $(date -d wed) && $(date -d thu) && $(date -d fri) ]]
     do
       tasks_id=$(mysql -h 192.168.0.100 -P 33056 -umantis -pmantis mantis -e "select mbt.id as 'ID' from mantis_bug_table mbt INNER JOIN mantis_category_table mct ON (mbt.category_id=mct.id) LEFT OUTER JOIN mantis_user_table mut ON (mbt.handler_id=mut.id) where mbt.status=40 and mut.username in ('a.simuskov') order by last_updated desc;")
@@ -33,4 +31,4 @@ mantis_comf_tasks () {
 
 }
 
-mantis_comf_tasks $1
+mantis_comf_tasks start
