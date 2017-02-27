@@ -308,8 +308,8 @@ get_stat () {
   local _func_name="get_stat"
 
   case $1 in 
-    start) cycle=true ;;
-    stop) cycle=false ;;
+    start) cycle=true ; echo "Цикл запущен" ;;
+    stop) cycle=false ; echo "Цикл остановлен" ;;
     *) func_help $_func_name ;;
   esac
     while $cycle
