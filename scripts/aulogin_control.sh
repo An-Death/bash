@@ -1,6 +1,6 @@
 #!/bin/bash
 # Скрипт добавляет/удаляет текущего юзера в группу nopassswdlogn
-source /home/as/Документы/scr/.bash_source_color.cfg
+source /home/as/Документы/scr/source/bash_source_color.cfg
 
 
 if ( id as | grep -o nopasswdlogin > /dev/null ) || [[ $(date) > $(date -d 18:40) ]] 

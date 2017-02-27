@@ -1,5 +1,5 @@
 
-source ~/Документы/scr/.bash_source_color.cfg
+source ~/Документы/scr/source/bash_source_color.cfg
 
 func_help () {
 	case $1 in

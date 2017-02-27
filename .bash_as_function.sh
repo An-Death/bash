@@ -1,5 +1,6 @@
 
-source ~/Документы/scr/.bash_source_color.cfg
+#Подключение цветов
+source ~/Документы/scr/source/bash_source_color.cfg
 
 readonly SETCOLOR_SUCCESS="echo -en $BGreen"
 readonly SETCOLOR_FAILURE="echo -en $BRed"
@@ -301,6 +302,26 @@ function gping () {
 
 
 
+get_stat () {
+  variable_check $*
+  #переменная для функции help
+  local _func_name="get_stat"
+
+  case $1 in 
+    start) cycle=true ;;
+    stop) cycle=false ;;
+    *) func_help $_func_name ;;
+  esac
+    while $cycle
+  do
+    sleep 1
+    until [[ $(date) != $(date -d 8:00:00) ]] && [[ $(date -d mon) && $(date -d tue) && $(date -d wed) && $(date -d thu) && $(date -d fri) ]]
+    do
+      cd ~/Документы/scr/script/ && ./get_stats.sh 
+    done
+  done
+}
+
 #Конвертер
 conv () {
 
@@ -349,34 +370,6 @@ conv () {
 }
 
 
-mantis_comf_tasks () {
-
-  variable_check $*
-  case $1 in
-    start) time_control=true ;;
-    stop) time_control=false ;;
-  esac
-
-  while $time_control
-  do
-    echo "true" && sleep 3
-    until [[ $(date) != $(date -d 17:00:00) ]]
-    do
-      tasks_id=$(mysql -h 192.168.0.100 -P 33056 -umantis -pmantis mantis -e "select mbt.id as 'ID' from mantis_bug_table mbt INNER JOIN mantis_category_table mct ON (mbt.category_id=mct.id) LEFT OUTER JOIN mantis_user_table mut ON (mbt.handler_id=mut.id) where mbt.status=40 and mut.username in ('a.simuskov') order by last_updated desc;")
-      for tasks in $tasks_id 
-      do
-        if [[ $tasks =~ [0-9]{6} ]]
-          then  
-            # echo "$tasks
-            google-chrome --app="http://office.tetra-soft.ru/mantis/view.php?id=${tasks}"
-          #else
-            # echo "is not tasks_id - $tasks"
-        fi
-      done
-    done
-  done  
-
-}
 
 #Ситуационный, надо доделать.
 con_kill () {
