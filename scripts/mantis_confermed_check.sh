@@ -1,12 +1,9 @@
 #!/bin/bash
 
 #Скрипт для вывода закомвермленных тасков
+start_man_conf_task=true
 
-
-
-mantis_comf_tasks () {
-
-  while $time_control
+  while $start_man_conf_task
   do
   	sleep 1
     until [[ $(date) != $(date -d 17:00:00) ]] && [[ $(date -d mon) && $(date -d tue) && $(date -d wed) && $(date -d thu) && $(date -d fri) ]]
@@ -25,6 +22,3 @@ mantis_comf_tasks () {
     done
   done  
 
-}
-
-mantis_comf_tasks start
