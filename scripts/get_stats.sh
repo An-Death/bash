@@ -34,20 +34,20 @@ do
 		96)	echo -e $BRed"r.leontyev"$Color_Off ;; #>> $today_dir/check_check.log ;;
 	esac
 	# проверка действий
-	rq_1="select bht.bug_id, FROM_UNIXTIME(bht.date_modified) as 'Date', mct.name as 'Category',mbt.status,mbt.summary as 'Name', mbtt.note as 'Comment' from \
-mantis_bug_history_table bht INNER JOIN mantis_bug_table mbt ON (bht.bug_id=mbt.id) INNER JOIN mantis_category_table mct ON (mbt.category_id=mct.id) INNER JOIN mantis_bugnote_text_table mbtt ON (bht.old_value=mbtt.id) \
-where bht.user_id='${user_id}'  and bht.type=2 and bht.date_modified > UNIX_TIMESTAMP()-${work_time} order by mbt.last_updated desc  limit 100;"
+	rq_1="select bht.bug_id, bht.field_name, bht.old_value,bht.new_value, FROM_UNIXTIME(bht.date_modified), mct.name as 'Category',mbt.status,mbt.summary as time \
+	from mantis_bug_history_table bht INNER JOIN mantis_bug_table mbt ON (bht.bug_id=mbt.id) INNER JOIN mantis_category_table mct ON (mbt.category_id=mct.id) \
+	where bht.user_id=${user_id} and bht.field_name<>'' and bht.date_modified > UNIX_TIMESTAMP()-${work_time} order by bht.date_modified desc  limit 100;"
 # Проверка комментов
 	rq_2="select bht.bug_id, FROM_UNIXTIME(bht.date_modified) as 'Date', mct.name as 'Category',mbt.status,mbt.summary as 'Name', mbtt.note as 'Comment' from \
 mantis_bug_history_table bht INNER JOIN mantis_bug_table mbt ON (bht.bug_id=mbt.id) INNER JOIN mantis_category_table mct ON (mbt.category_id=mct.id) INNER JOIN mantis_bugnote_text_table mbtt ON (bht.old_value=mbtt.id) \
-where bht.user_id='${user_id}' and bht.type=2 and bht.date_modified > UNIX_TIMESTAMP()-${work_time} order by mbt.last_updated desc  limit 100;"
+where bht.user_id='${user_id}' and bht.type=2 and bht.date_modified > UNIX_TIMESTAMP()-${work_time} order by bht.date_modified desc  limit 100;"
 
 #echo $rq_1 
 #echo $rq_2
 	# проверка действий
-	${MantisMYSQLBaseConnect} -e "$rq_1"  #>> $today_dir/check_check.log 
+	${MantisMYSQLBaseConnect} -e "$rq_1" 2>/dev/null | awk '{print $1}' | sort -u | echo -e "Всего действий с тасками: "$UWhite""$BWhite"`grep -E [[:digit:]]{6} -c`"$Color_Off" " #>> $today_dir/check_check.log 
 	# Проверка комментов
-	${MantisMYSQLBaseConnect} -e "$rq_2"  #>> $today_dir/check_check.log 
+	${MantisMYSQLBaseConnect} -e "$rq_2"  2>/dev/null #>> $today_dir/check_check.log 
 done
 #cat $today_dir/check_check.log
 
