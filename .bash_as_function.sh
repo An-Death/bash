@@ -494,6 +494,31 @@ alarms_function () {
 
 }
 
+# g_off в периоде
+g_off_p () {
+
+  local default="igs bn gn ssk e 4 sggf"
+  local cycle_counter=1
+  if [ -z $1 ]
+    then
+    local period=$default
+  else
+    local period=$*
+  fi
+
+  while true
+    do 
+      echo "Цикл #$cycle_counter"
+      echo -e "$BGreen====================================="`date`"=======================================$Color_Off" 
+      for f in ${period}
+        do
+        echo -e "\n" && g_off $f
+      done
+      echo -e "$BGreen====================================="`date`"=======================================$Color_Off" ; let 'cycle_counter=cycle_counter+1' && sleep 600
+  done
+
+}
+
 #боксы проекта
 get_boxes () {
 
