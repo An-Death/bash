@@ -1,6 +1,7 @@
 
 #Подключение цветов
 source ~/Документы/scr/source/bash_source_color.cfg
+source ~/Документы/scr/source/data.cfg
 
 readonly SETCOLOR_SUCCESS="echo -en $BGreen"
 readonly SETCOLOR_FAILURE="echo -en $BRed"
@@ -163,7 +164,7 @@ function gping () {
   #Переменная для определения имени скв из connect.conf
     local well_name="grep '^well=' ~/connect'"$cn"'/connect.conf | sed 's/wel.*=//;s/\ /_/g'"  
   #добавление ip moxa в connect.conf
-    local add_moxa_ip="if ( grep -o -E '.*moxa_ip.*([0-9]{1,3}[\.]){3}[0-9]{1,3}.*' connect'"$cn"'/connect.conf ) ; then echo 'moxa_ip already exist' ; else sed 's/^bind_port.*/&\n\nmoxa_ip=$ipMOXA/' -i connect'"$cn"'/connect.conf ; fi"
+    local add_moxa_ip="if ( grep -o -E '.*moxa_ip.*([0-9]{1,3}[\.]){3}[0-9]{1,3}.*' connect'"$cn"'/connect.conf ) ; then echo 'moxa_ip already exist' ; else sed '0,/.*bind_port.*/{s/.*bind_port.*/&\n\nmoxa_ip=$ipMOXA/}' -i connect'"$cn"'/connect.conf ; fi"
   #переменные для составления запроса
     local sborshik_ping='echo -e "\e[0;1m""Определяем плагин и IP сборщика...""\e[0m"; readlink connect'"$cn"'/plugin/Proxy.jar |basename `cat ` |grep -i `sed "s/Proxy.jar//"` connect'"$cn"'/connect.conf|nc -vv `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` 445 '
     local cameras_ping='echo -e "\e[34;1m"connect'"$cn"'/ "\e[0m""\n"; grep -E -o "^camera.*stream.*([0-9]{1,3}[\.]){3}[0-9]{1,3}" ~/connect'"$cn"'/connect.conf $grep_cam | for f in `grep -vE "recorder"`; do echo -e "\e[32;1m"$f "\e[0m" && echo $f | ping -c 3 `grep -E -o -m 1 "([0-9]{1,3}[\.]){3}[0-9]{1,3}"` ; done; echo "done"' 
@@ -322,6 +323,18 @@ get_stat () {
   done
 }
 
+#перезапуск видео на БКЕ
+bn_snap_restat () {
+
+  mysql_connect_to_database="mysql $sql_bn_connect -A"
+  connect_to_server_ssh="sshpass -p $pass_bn_serv ssh -o StrictHostKeyChecking=no $host_bn_serv"
+  request="select ww.name, wb.status_id, ws.product_key, ws.health_address from WITS_WELL ww inner join WITS_WELLBORE wb on (ww.id=wb.well_id) inner join WITS_SOURCE ws on (ws.id=ww.source_id) inner join WITS_WELL_PROP wp on (wb.well_id=wp.well_id and wp.status_id=3 and wb.status_id=3) ;"
+  ports=$($mysql_connect_to_database -e "$request" |grep -o -E :[0-9]{4} | tr -d  ':')
+  
+  $connect_to_server_ssh 'for f in '$ports' ; do curl http://127.0.0.1:$f/axis?snapshots=on > /dev/null 2>&1 && echo  "$f - OK" || echo "$f - FAIL" ; done'
+  
+}
+
 #Конвертер
 conv () {
 
@@ -379,6 +392,20 @@ con_kill () {
       sleep 45
     done
 
+}
+
+#открывает выполняемые таски в отдельных окнах.
+mywork () {
+
+tasks_id=$($MantisMYSQLBaseConnect -e "select mbt.id as 'ID' from mantis_bug_table mbt INNER JOIN mantis_category_table mct ON (mbt.category_id=mct.id) LEFT OUTER JOIN mantis_user_table mut ON (mbt.handler_id=mut.id) where mbt.status=40 and mut.username in ('a.simuskov') order by last_updated desc;")
+    for tasks in $tasks_id 
+      do
+        if [[ $tasks =~ [0-9]{6} ]]
+          then  
+            echo "$(date)  $tasks" >> /tmp/mantis_comf_tasks.log
+            google-chrome --app="http://office.tetra-soft.ru/mantis/view.php?id=$tasks"
+          fi
+      done
 }
 
 
