@@ -9,15 +9,43 @@ func_help () {
 		xc) func_help_xc ;;
 		mys) func_help_mys ;;
 		gtest) func_help_gtest ;;
-		
+		g) func_help_g ;;
 		*) echo "ERROR" && exit 1;;
 	esac
+}
+
+func_help_g () {
+	echo -e "
+Usage g:
+	g [#g] [#vpn|key|command] [key|#connect] <command>
+
+Описание:
+	Расширенная функция для подключения к боксу по ssh.
+	Самый простой пример использования 'g 03' - подключится к gbox-03. 
+	Если после номера бокса указать 1 или 2, то будет выбран конкретный VPN канал
+	Так же во второй перебемнной без указания ключей можно указать команду, которую необходимо Отправить на бокс.
+Key:
+	cr - connect restart
+	cstop - connect stop 
+	cstart - connect start
+	cc - connect counts
+	cs - connect server_ip
+	ci - connect info
+	cl - connect log
+	sc - send command
+	cli - check list 
+	gc - gbox copy
+	bc - gbox config from boxer
+	gb) - gbox back config
+	oc) - open config
+"
+return 1
 }
 
 func_help_gping () {
 	echo -e "
 Usage gping:
-	gping [g№] [s|c|m] {-c|cn} <digit>
+	gping [#g] [s|c|m] {-c|cn} <digit>
 	
 	Где:
 
@@ -171,7 +199,7 @@ echo -e "
 }
 
 func_help_gtest () {
-	
+
 	echo -e "
 	Функция для локального тестирования настроек коннекта. Первой переменной передаётся номер бокса, второй кейсы. Третьей переменной указывается версия коннекта для тестирования.
 	Пример:
