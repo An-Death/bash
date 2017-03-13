@@ -143,8 +143,6 @@ function g () {
       255) notify-send "GBOX-$gnum ERROR" "Ошибка при копировании настроек с gbox-$gnum connect$connect_num";;
       *) echo "New error $error_num" ;;
     esac
-
-    
 }
 
 ## пинг бокса, пинг сборщика,пинг камер.
@@ -185,7 +183,7 @@ function gping () {
 
   # проверка ввода
 
-      while [ 1 ]
+    while [ 1 ]
       do
         if [ -z $1 ]
           then
@@ -640,4 +638,27 @@ colors() {
                 done
                 echo; echo
         done
+}
+
+test_opt () {
+              aflag=
+              bflag=
+              while getopts ab: name
+              do
+                  case $name in
+                  a)    aflag=1;;
+                  b)    bflag=1
+                        bval="$OPTARG";;
+                  ?)   printf "Usage: %s: [-a] [-b value] args\n" $0
+                        exit 2;;
+                  esac
+              done
+              if [ ! -z "$aflag" ]; then
+                  printf "Option -a specified\n"
+              fi
+              if [ ! -z "$bflag" ]; then
+                  printf 'Option -b "%s" specified\n' "$bval"
+              fi
+              shift $(($OPTIND - 1))
+              printf "Remaining arguments are: %s\n" "$*"
 }
