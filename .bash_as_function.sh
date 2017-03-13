@@ -99,50 +99,173 @@ ${SETCOLOR_NORMAL}
   color_check
 }
 
+func_connect_to () {
+  case _func_name in 
+    g) ;;
+    gping) echo -e "$BWhite""Подключаемся к удалённому серверу...""$Color_Off" && pass_g $gbox_num && sshpass -p $pass_for_g ssh -l ts gbox-$gbox_num $do_command ;;
+  esac
+  }
+
 
 
 # копия Макса с лобавленной возможностью ввода 3й переменной для отправки команды на бокс по ssh
 # для отправки команды всегда необходимо указывать 3и переменных, где 1 - номер бокса, 2 - номер коннекта, 3 - комманда в ковычках.
 function g () {
 
+local _func_name="g"
+local gnum=
+local box_adr=
+#проверка наличия переменных
   variable_check $*
+
+#проверка первой переменной на digit или ip или gbox для g
+func_check_digit () {
 
   if `echo $1 | grep  -m 1 -qE "[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}"`
   then
-    local gnum=`nmblookup -A $1| grep -m 1 -oE "GBOX-[[:digit:]]{2,4}" | grep -oE "[[:digit:]]{2,4}"` ||  (echo "По указанному ip находится не GBOX" 1>&2 ; return 1 )
-    local box_adr="${1}"
+    gnum=`nmblookup -A $1| grep -m 1 -oE "GBOX-[[:digit:]]{2,4}" | grep -oE "[[:digit:]]{2,4}"` ||  (echo "По указанному ip находится не GBOX" 1>&2 ; return 1 )
+    box_adr="$1"
   else
-    if [[ "${#1}" -lt 2 ]] ; then  gnum="0${1}" ; else gnum="${1}" ; fi
-    local box_adr="gbox-${gnum}"
+    if [[ "${#1}" -lt 2 ]]
+      then
+        gnum="0${1}"
+      else 
+        gnum="$1"
+    fi
+    box_adr="gbox-$gnum"
   fi
   pass_g $gnum;
+}
 
-  if [ -z "$3" ] 
-    then 
-      if [ -z "$2" ] 
-        then
-          echo -e "Заходим на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no -t "${box_adr}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${box_adr}" " >> "/home/ts/backup/tools/logins.log" ; cat /etc/motd; bash -l;"
-        else
-          get_server_use_gbox_conf  $gnum $2|| return 2
-          echo -e "Заходим на gbox-$gnum\nСкважина $(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\nЗаходим по ip $GBOX_VPN" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no "${GBOX_VPN}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${GBOX_VPN}" " >> "/home/ts/backup/tools/logins.log" ; cat /etc/motd; bash -l;"
-      fi
-    else 
-      if [ "$2" -eq "1" ]
-        then
-          echo -e "Отправляем команду - ${COLOR_RED}"$3"${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no -t "${box_adr}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${box_adr}" executed : "$3" " >> "/home/ts/backup/tools/logins.log" && "${3}""
-        else
-          get_server_use_gbox_conf  $gnum $2|| return 2
-          echo -e "Отправляем команду - ${COLOR_RED}"$3"${COLOR_NORMAL} на gbox-$gnum\nСкважина $(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\nЗаходим по ip ${GBOX_VPN}" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no "${GBOX_VPN}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${GBOX_VPN}" executed : "$3" " >> "/home/ts/backup/tools/logins.log" && "${3}""
-      fi
-  fi
-  
-    local error_num="$?"
-    case "$error_num" in
-      0) notify-send "GBOX-$gnum OK" "Соединение с gbox-$gnum завершено";;
-      5)notify-send "GBOX-$gnum ERROR"  "Неправильный логин/пароль gbox-$gnum";;
-      255) notify-send "GBOX-$gnum ERROR" "Ошибка при копировании настроек с gbox-$gnum connect$connect_num";;
-      *) echo "New error $error_num" ;;
-    esac
+
+  func_check_cases () {
+    case $1 in
+    #connect restart
+    cr) _command="restart"; cn="$2" ;;
+    #connect_stop
+    cstop) _command="stop" ; case $2 in
+      --all|-a|a|all ) cn="all";;
+      ^[1-9]{1}$) cn="$2" ;;
+      esac ;; 
+    #connect_start
+    cstart) _command="start" ; case $2 in
+      --all|-a|a|all ) cn="all";;
+      ^[1-9]{1}$) cn="$2" ;;
+      esac ;;  
+    #connect count
+    cc) _command="count" ;; 
+    #send to server ip & port
+    cs) _command="server_ip"; cn="$2" ;; 
+    #connect info
+    ci) _command="info"; cn="$2" ;; 
+    #connect logs
+    cl) _command="log"; cn="$2"; what_log="$3" ;;  
+    #send command
+    sc) _command="send_command" 
+          case $2 in
+          ^[1-9]) cn=$2
+                  command_is="$3" ;;
+          *) command_is="$2" ;; 
+          esac
+          ;; 
+    #check list
+    ckl) _command="check_list" ;; 
+    #copy from gbox
+    gc) _command="copy"; cn="$2" ;;
+    #copy from boxer
+    bc) _command="copy_boxer" ; cn="$2" ;;
+    #gbox back config + restart connect
+    gb) _command="box_back" ; cn="$2" ;;
+    #open any configs
+    oc) _command="subl" ; config="$2" ;;
+    *) ;;
+esac
+}
+
+#  if [ -z "$3" ] 
+#    then 
+#      if [ -z "$2" ] 
+#        then
+#          echo -e "Заходим на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no -t "${box_adr}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${box_adr}" " >> "/home/ts/backup/tools/logins.log" ; cat /etc/motd; bash -l;"
+#        else
+#          get_server_use_gbox_conf  $gnum $2|| return 2
+#          echo -e "Заходим на gbox-$gnum\nСкважина $(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\nЗаходим по ip $GBOX_VPN" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no "${GBOX_VPN}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${GBOX_VPN}" " >> "/home/ts/backup/tools/logins.log" ; cat /etc/motd; bash -l;"
+#      fi
+#    else 
+#      if [ "$2" -eq "1" ]
+#        then
+#          echo -e "Отправляем команду - ${COLOR_RED}"$3"${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no -t "${box_adr}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${box_adr}" executed : "$3" " >> "/home/ts/backup/tools/logins.log" && "${3}""
+#        else
+#          get_server_use_gbox_conf  $gnum $2|| return 2
+#          echo -e "Отправляем команду - ${COLOR_RED}"$3"${COLOR_NORMAL} на gbox-$gnum\nСкважина $(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\nЗаходим по ip ${GBOX_VPN}" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no "${GBOX_VPN}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${GBOX_VPN}" executed : "$3" " >> "/home/ts/backup/tools/logins.log" && "${3}""
+#      fi
+#  fi
+
+
+if [ -z $2 ]
+  then
+    if [[ $1 = 'h' || $1 = '-h' || $1 = 'help' || $1 = '--help' ]]
+    then
+      _command="101"
+    else
+      func_check_digit $1
+      _command="ssh"
+    fi
+elif [[ $2 =~ ^[0-9]{1}$ ]]
+  then
+    if [ -z $3 ]
+      then
+      _command="ssh"
+      vpn_selector=$2
+    else
+      vpn_selector=$2
+      func_check_cases $3 $4 $5 $6
+    fi
+else
+  func_check_cases $2 $3 $4 $5
+fi
+
+
+
+ssh_connection="sshpass -p $pass_for_g ssh -l ts -o StrictHostKeyChecking=no -t $box_adr "
+ssh_command="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr  >> /home/ts/backup/tools/logins.log ; cat /etc/motd; cd connect ; bash -l;"
+ssh_descript="echo -e Заходим на ${COLOR_BLUE}gbox-$gnum\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-$gnum) \n" # && $ssh_connection "$ssh_command"'
+gbox_connect_selector='get_server_use_gbox_conf  $gnum $vpn_selector|| return 2
+                        echo -e "Заходим на gbox-$gnum\nСкважина $(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\nЗаходим по ip $GBOX_VPN" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no "${GBOX_VPN}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${GBOX_VPN}" " >> "/home/ts/backup/tools/logins.log" ; cat /etc/motd; cd connect"$vpn_selector" ; bash -l;"'
+gbox_connect=" $ssh_descript && $ssh_connection '$ssh_command'"
+case $_command in
+ssh) if [ -z $vpn_selector ]
+      then 
+        $gbox_connect
+      else
+        $gbox_connect_selector
+      fi ;;
+restart) ;;
+stop) ;;
+start) ;;
+count) ;;
+server_ip) ;;
+info) ;;
+log) ;;
+send_command) ;;
+check_list) ;;
+copy) ;;
+box_back) ;;
+subl) ;;
+101) func_help $_func_name ;;
+esac  
+
+
+  local error_num="$?"
+  case "$error_num" in
+    0) notify-send "GBOX-$gnum OK" "Соединение с gbox-$gnum завершено";;
+    5)notify-send "GBOX-$gnum ERROR"  "Неправильный логин/пароль gbox-$gnum";;
+    255) notify-send "GBOX-$gnum ERROR" "Ошибка при копировании настроек с gbox-$gnum connect$connect_num";;
+    1) return 0 ;;
+    *) echo "New error $error_num" ;;
+  esac
+
+
 }
 
 ## пинг бокса, пинг сборщика,пинг камер.
@@ -295,31 +418,28 @@ function gping () {
     pkill -f ping
   }
 
-  func_connect_to () {
-    echo -e "$BWhite""Подключаемся к удалённому серверу...""$Color_Off" && pass_g $gbox_num && sshpass -p $pass_for_g ssh -l ts gbox-$gbox_num $do_command
-  }
 
 
 
-get_stat () {
-  variable_check $*
-  #переменная для функции help
-  local _func_name="get_stat"
-
-  case $1 in 
-    start) cycle=true ; echo "Цикл запущен" ;;
-    stop) cycle=false ; echo "Цикл остановлен" ;;
-    *) func_help $_func_name ;;
-  esac
-    while $cycle
-  do
-    sleep 1
-    until [[ $(date) != $(date -d 8:00:00) ]] && [[ $(date -d mon) && $(date -d tue) && $(date -d wed) && $(date -d thu) && $(date -d fri) ]]
-    do
-      cd ~/Документы/scr/script/ && ./get_stats.sh 
-    done
-  done
-}
+ #get_stat () {
+#  variable_check $*
+#  #переменная для функции help
+#  local _func_name="get_stat"
+#
+#  case $1 in 
+#    start) cycle=true ; echo "Цикл запущен" ;;
+#    stop) cycle=false ; echo "Цикл остановлен" ;;
+#    *) func_help $_func_name ;;
+#  esac
+#    while $cycle
+#  do
+#    sleep 1
+#    until [[ $(date) != $(date -d 8:00:00) ]] && [[ $(date -d mon) && $(date -d tue) && $(date -d wed) && $(date -d thu) && $(date -d fri) ]]
+#    do
+#      cd ~/Документы/scr/script/ && ./get_stats.sh 
+#    done
+#  done
+#}
 
 #перезапуск видео на БКЕ
 bn_snap_restat () {
