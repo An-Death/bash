@@ -103,7 +103,8 @@ func_connect_to () {
    
   case $_func_name in 
     g)  case $connection in 
-        box) echo -e "$ssh_descript" && sshpass -p $pass_for_g ssh -l ts -o StrictHostKeyChecking=no -t $box_adr $ssh_command ;;
+        box)  get_server_use_gbox_conf  $gnum $vpn_selector
+              echo -e "$ssh_descript" && sshpass -p $pass_for_g ssh -l ts -o StrictHostKeyChecking=no -t $box_adr $ssh_command ;;
         #if [ -z $vpn_selector ] #|| [ $vpn_selector -eq 1 ]
         #  then 
         #    echo -e "$ssh_descript" && sshpass -p $pass_for_g ssh -l ts -o StrictHostKeyChecking=no -t $box_adr $ssh_command
@@ -175,13 +176,7 @@ func_check_digit () {
     #connect logs
     cl) _command="log"; cn="$2"; what_log="$3" ;;  
     #send command
-    sc) _command="send_command" 
-          case $2 in
-          ^[1-9]) cn=$2
-                  command_is="$4" ;;
-          sc) command_is="$3" ;; 
-          esac
-          ;; 
+    sc|send|--send) _command="exec" ; command_is="$2" ;;  
     #check list
     ckl) _command="check_list" ;; 
     #copy from gbox
@@ -196,7 +191,9 @@ func_check_digit () {
     ver) _command="version" ; cn="$2" ;;
     #updater
     update) _command="update" ;;
-    *) _command="101" ;;
+    h|-h|--h|help|-help|--help) _command="101" ;;
+    #отправка непосредственно комманды
+    *) _command="exec" ; command_is=$1 ;;
 esac
 }
 
@@ -223,42 +220,40 @@ if [[ $1 = 'h' || $1 = '-h' || $1 = 'help' || $1 = '--help' ]]
   then
   _command="101"
 else
-  func_check_digit $1 #returned $gnum $box_adr
-  _command="ssh"
+  func_check_digit $1 >/dev/null #returned $gnum $box_adr
 fi
-if [[ $2 -eq 1 ]]
+if [ -z $2 ]
+  then
+  _command="ssh"
+elif [[ $2 -eq 1 ]]
   then
   _command="ssh"
 elif [[ $2 =~ ^[2-9]{1}$ ]]
   then
-    if [ -z $3 ]
-      then
-      _command="ssh"
-      vpn_selector=$2
-      cn=$2
-    else
-      vpn_selector=$2
-      cn=$2
-      func_check_cases $3 $4 $5 $6
-    fi
+    _command="ssh"
+    vpn_selector=$2
+    cn=$2
 else
   func_check_cases $2 $3 $4 $5
 fi
 
 
+ssh_descript="Заходим на ${COLOR_BLUE}gbox-$gnum\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS:\n$(nslookup gbox-$gnum) \n" 
+ssh_command_default="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr  >> /home/ts/backup/tools/logins.log ; cat /etc/motd; cd connect$cn/ ; bash -l;"
+ssh_command_row=""
+#отправка команды на прямую
+ssh_descript_exec="Отправляем команду - ${COLOR_RED}$command_is${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})"
+ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr executed : $command_is >> /home/ts/backup/tools/logins.log && $command_is"
 
-#ssh_connection="sshpass -p $pass_for_g ssh -l ts -o StrictHostKeyChecking=no -t $box_adr "
-ssh_command="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr  >> /home/ts/backup/tools/logins.log ; cat /etc/motd; cd connect$cn/ ; bash -l;"
-ssh_descript="Заходим на ${COLOR_BLUE}gbox-$gnum\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS:\n$(nslookup gbox-$gnum) \n" # && $ssh_connection "$ssh_command"'
-#gbox_connect_selector='get_server_use_gbox_conf  $gnum $vpn_selector|| return 2
-#                        echo -e "Заходим на gbox-$gnum\nСкважина $(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\nЗаходим по ip $GBOX_VPN" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no "${GBOX_VPN}" "[ -d "/home/ts/backup/tools" ] && echo "`date` "`whoami`" from "`hostname`" and use "${GBOX_VPN}" " >> "/home/ts/backup/tools/logins.log" ; cat /etc/motd; cd connect"$vpn_selector" ; bash -l;"'
-#gbox_connect=" $ssh_descript && $ssh_connection '$ssh_command'"
+
+
 case $_command in
-  ssh|restart|stop|start|log|send_command|box_back|version) connection="box" ;;
+  ssh|restart|stop|start|log|send_command|box_back|version|exec) connection="box" ;;
   check_list|info|count|update) connection="g100" ;;
 esac
+
 case $_command in
-ssh) func_connect_to $ssh_command
+ssh) ssh_command=$ssh_command_default ; func_connect_to $ssh_command ;;
 restart) ;;
 stop) ;;
 start) ;;
@@ -273,6 +268,7 @@ box_back) ;;
 subl) ;;
 update) ;;
 version) ;;
+exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ; func_connect_to $ssh_command ;;
 101) func_help $_func_name ;;
 esac  
 
