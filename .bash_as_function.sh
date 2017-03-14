@@ -159,8 +159,9 @@ func_check_digit () {
     cr) _command="restart"; cn="$2" ;;
     #connect_stop
     cstop) _command="stop" ; case $2 in
-      --all|-a|a|all ) cn="all";;
+      --all|-a|a|all|"") cn="" ;;
       ^[1-9]{1}$) cn="$2" ;;
+      *) cn="" ;;
       esac ;; 
     #connect_start
     cstart) _command="start" ; case $2 in
@@ -191,6 +192,16 @@ func_check_digit () {
     ver) _command="version" ; cn="$2" ;;
     #updater
     update) _command="update" ;;
+    #admin open
+    admin) _command="admin_open" ;;
+    #подключение к боксу по тунелю
+    tun) _command="tun";;
+    #проверка базы сборщика, или подключение к локальной базе
+    mys) case $2 in 
+          sbor) _command="mys_sbor" ;echo -n "Введите номер коннекта:" && read cn
+                if [ $cn -eq 1 ] ; then cn= ; fi ;;
+          local) _command="mys_local" ;;
+    ;;
     h|-h|--h|help|-help|--help) _command="101" ;;
     #отправка непосредственно комманды
     *) _command="exec" ; command_is=$1 ;;
@@ -248,8 +259,8 @@ ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hos
 
 
 case $_command in
-  ssh|restart|stop|start|log|send_command|box_back|version|exec) connection="box" ;;
-  check_list|info|count|update) connection="g100" ;;
+  *) connection="box" ;;
+  check_list|info|count|update|tun) connection="g100" ;;
 esac
 
 case $_command in
@@ -267,6 +278,10 @@ copy) ;;
 box_back) ;;
 subl) ;;
 update) ;;
+admin) ;;
+tun) ;;
+mys_sbor) ;;
+mus_local) ;;
 version) ;;
 exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ; func_connect_to $ssh_command ;;
 101) func_help $_func_name ;;
