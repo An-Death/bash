@@ -177,7 +177,7 @@ func_check_digit () {
     #connect logs
     cl) _command="log"; cn="$2"; what_log="$3" ;;  
     #send command
-    sc|send|--send) _command="exec" ; command_is="$2" ;;  
+    sc|send|--send) _command="exec" ; command_is=(`echo -n "$2"`) ;;  
     #check list
     ckl) _command="check_list" ;; 
     #copy from gbox
@@ -201,10 +201,11 @@ func_check_digit () {
           sbor) _command="mys_sbor" ;echo -n "Введите номер коннекта:" && read cn
                 if [ $cn -eq 1 ] ; then cn= ; fi ;;
           local) _command="mys_local" ;;
+        esac
     ;;
     h|-h|--h|help|-help|--help) _command="101" ;;
     #отправка непосредственно комманды
-    *) _command="exec" ; command_is=$1 ;;
+    *) _command="exec" ; command_is="$1";;
 esac
 }
 
@@ -236,16 +237,16 @@ fi
 if [ -z $2 ]
   then
   _command="ssh"
-elif [[ $2 -eq 1 ]]
+elif ( [[ "$2" -eq 1 ]] )
   then
   _command="ssh"
-elif [[ $2 =~ ^[2-9]{1}$ ]]
+elif ( [[ "$2" =~ ^[2-9]{1}$ ]] )
   then
     _command="ssh"
-    vpn_selector=$2
+    vpn_selector=(`echo -n "$2"`)
     cn=$2
 else
-  func_check_cases $2 $3 $4 $5
+  func_check_cases "$2" "$3" $4 $5
 fi
 
 
@@ -367,7 +368,7 @@ function gping () {
                             else
                               cn=$4
                           fi
-                      elif [[ $3 =~ ^[^0-9]{1}$ ]]
+                      elif [[ $3 =~ ^[0-9]{1}$ ]]
                         then
                         cn=$3
                       fi
@@ -384,7 +385,7 @@ function gping () {
                             else
                               cn=$4
                           fi    
-                      elif [[ $3 =~ ^[^0-9]{1}$ ]]
+                      elif [[ $3 =~ ^[0-9]{1}$ ]]
                         then
                         cn=$3
                       fi
