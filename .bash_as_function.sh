@@ -156,6 +156,7 @@ func_check_digit () {
   func_check_cases () {
     #обнуление переменных
     path_g100_boxer=""
+
     case $1 in
     #connect restart
     cr) _command="restart"; cn="$2" ;;
@@ -281,7 +282,7 @@ copy) ;;
 box_back) ;;
 subl) ;;
 update) ;;
-admin) ;;
+admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;;
 tun) ;;
 mys_sbor) ;;
 mus_local) ;;
