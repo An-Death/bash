@@ -261,6 +261,8 @@ ssh_descript_exec="Отправляем команду - ${COLOR_RED}$command_is
 ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr executed : $command_is >> /home/ts/backup/tools/logins.log && $command_is"
 #чек версий админки и коннекта из боксера
 ssh_command_version="echo -e '${BBlue}Admin VERSION:${Color_Off} \n' ; head -1 ${path_g100_boxer}admin/version ; echo -e '\n${BBlue}Connect VERSION:${Color_Off}\n' ; head -3 ${path_g100_boxer}connect/version ; echo"
+#подключение к боксу через тунель
+ssh_command_tun="echo -e 'Подключаемся к gbox-$gnum' && sshpass -p $pass_for_g ssh ts@localhost -p 22$gnum  $ssh_command_default"
 
 case $_command in
   check_list|info|count|update|tun|version) connection="g100" ;;
@@ -283,7 +285,7 @@ box_back) ;;
 subl) ;;
 update) ;;
 admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;;
-tun) ;;
+tun) ssh_command=$ssh_command_tun ;;
 mys_sbor) ;;
 mus_local) ;;
 version) ssh_command=$ssh_command_version ;;
