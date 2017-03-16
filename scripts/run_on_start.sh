@@ -6,8 +6,6 @@
 
 #Запуск скрипта проверки закомфермленных тасков
 
-cd /home/as/Документы/scr/scripts/ && ./mantis_confermed_check.sh &
-
 #Вин ХП
 while ! virtualbox --startvm "Windows XP SP3" &
 do 
