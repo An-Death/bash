@@ -113,7 +113,7 @@ func_connect_to () {
         #  #"$GBOX_VPN" не возвращается, надо думать как вернуть.  
         #  echo -e "Заходим на gbox-$gnum\nСкважина $(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\nЗаходим по ip $GBOX_VPN" && sshpass -p "$pass_for_g" ssh -l ts -o StrictHostKeyChecking=no "${GBOX_VPN}" $ssh_command
         #fi
-        g100) ;;
+        g100) sshpass -p ${GATE_PASS} ssh support@192.168.0.100 $ssh_command ;;
         esac ;;
     gping) echo -e "$BWhite""Подключаемся к удалённому серверу...""$Color_Off" && pass_g $gbox_num && sshpass -p $pass_for_g ssh -l ts gbox-$gbox_num $do_command ;;
   esac
@@ -154,6 +154,8 @@ func_check_digit () {
 
 
   func_check_cases () {
+    #обнуление переменных
+    path_g100_boxer=""
     case $1 in
     #connect restart
     cr) _command="restart"; cn="$2" ;;
@@ -189,7 +191,7 @@ func_check_digit () {
     #open any configs
     oc) _command="subl" ; config="$2" ;;
     #head version admin & connect
-    ver) _command="version" ; cn="$2" ;;
+    ver|v|version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else _command="version" && path_g100_boxer="/home/support/bin/boxer/gbox-$gnum/home/ts/" ; fi ;;
     #updater
     update) _command="update" ;;
     #admin open
@@ -256,16 +258,16 @@ ssh_command_row=""
 #отправка команды на прямую
 ssh_descript_exec="Отправляем команду - ${COLOR_RED}$command_is${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})"
 ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr executed : $command_is >> /home/ts/backup/tools/logins.log && $command_is"
-
-
+#чек версий админки и коннекта из боксера
+ssh_command_version="echo -e '${BBlue}Admin VERSION:${Color_Off} \n' ; head -1 ${path_g100_boxer}admin/version ; echo -e '\n${BBlue}Connect VERSION:${Color_Off}\n' ; head -3 ${path_g100_boxer}connect/version ; echo"
 
 case $_command in
+  check_list|info|count|update|tun|version) connection="g100" ;;
   *) connection="box" ;;
-  check_list|info|count|update|tun) connection="g100" ;;
 esac
 
 case $_command in
-ssh) ssh_command=$ssh_command_default ; func_connect_to $ssh_command ;;
+ssh) ssh_command=$ssh_command_default ;;
 restart) ;;
 stop) ;;
 start) ;;
@@ -283,11 +285,13 @@ admin) ;;
 tun) ;;
 mys_sbor) ;;
 mus_local) ;;
-version) ;;
-exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ; func_connect_to $ssh_command ;;
+version) ssh_command=$ssh_command_version ;;
+version_box) ssh_command=$ssh_command_version ;; #head версий с бокса
+exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ;;
 101) func_help $_func_name ;;
 esac  
 
+func_connect_to $ssh_command
 
   local error_num="$?"
   case "$error_num" in
