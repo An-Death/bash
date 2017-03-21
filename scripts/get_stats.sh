@@ -5,14 +5,15 @@
 #Загрузка сурсов с пасами и ip
 source ~/Документы/scr/source/data.cfg
 source ~/Документы/scr/source/bash_source_color.cfg
-today_dir="/home/as/var/log/mylog/morning_test/$(date +%F)/"
-work_time=43200
 
-if ! test -d $today_dir
-	then 
-	mkdir -p $today_dir
+
+default_work_time=43200
+if [ -z $1 ]
+	then
+		work_time=$default_work_time
+	else
+		work_time=$1*3600
 fi
-
 
 # Ручные проверки.
 echo -e $BGreen
