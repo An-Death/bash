@@ -152,6 +152,13 @@ func_check_digit () {
   pass_g $gnum;
 }
 
+func_ping () {
+  while true ; do 
+  ping -c 1 gbox-$gnum >/dev/null 2>&1 && break 
+  done
+  notify-send "GBOX-$gnum OK" "gbox-$gnum доступен. \n PING OFF" && return 0 
+}
+
 
   func_check_cases () {
     #обнуление переменных
@@ -206,6 +213,7 @@ func_check_digit () {
           local) _command="mys_local" ;;
         esac
     ;;
+    ping) _command="ping" ;;
     h|-h|--h|help|-help|--help) _command="101" ;;
     #отправка непосредственно комманды
     *) _command="exec" ; command_is="$1";;
@@ -262,7 +270,7 @@ ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hos
 #чек версий админки и коннекта из боксера
 ssh_command_version="echo -e '${BBlue}Admin VERSION:${Color_Off} \n' ; head -1 ${path_g100_boxer}admin/version ; echo -e '\n${BBlue}Connect VERSION:${Color_Off}\n' ; head -3 ${path_g100_boxer}connect/version ; echo"
 #подключение к боксу через тунель
-ssh_command_tun="echo -e 'Подключаемся к gbox-$gnum' && sshpass -p $pass_for_g ssh ts@localhost -p 22$gnum  $ssh_command_default"
+ssh_command_tun="echo -e 'Подключаемся к gbox-$gnum' && sshpass -p $pass_for_g ssh ts@localhost -p 22$gnum " # Не возврщает нормом bash
 
 case $_command in
   check_list|info|count|update|tun|version) connection="g100" ;;
@@ -286,12 +294,14 @@ subl) ;;
 update) ;;
 admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;;
 tun) ssh_command=$ssh_command_tun ;;
+interfaces) ;; 
 mys_sbor) ;;
 mus_local) ;;
 version) ssh_command=$ssh_command_version ;;
 version_box) ssh_command=$ssh_command_version ;; #head версий с бокса
 exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ;;
 101) func_help $_func_name ;;
+ping) func_ping $gnum & return 1 ;;
 esac  
 
 func_connect_to $ssh_command
@@ -485,13 +495,19 @@ function gping () {
 #перезапуск видео на БКЕ
 bn_snap_restat () {
 
-  mysql_connect_to_database="mysql $sql_bn_connect -A"
+ 
+  mysql_connect_to_database="mysql $sql_bn_connect -A"  
   connect_to_server_ssh="sshpass -p $pass_bn_serv ssh -o StrictHostKeyChecking=no $host_bn_serv"
-  request="select ww.name, wb.status_id, ws.product_key, ws.health_address from WITS_WELL ww inner join WITS_WELLBORE wb on (ww.id=wb.well_id) inner join WITS_SOURCE ws on (ws.id=ww.source_id) inner join WITS_WELL_PROP wp on (wb.well_id=wp.well_id and wp.status_id=3 and wb.status_id=3) ;"
-  ports=$($mysql_connect_to_database -e "$request" |grep -o -E :[0-9]{4} | tr -d  ':')
-  
-  $connect_to_server_ssh 'for f in '$ports' ; do curl http://127.0.0.1:$f/axis?snapshots=on > /dev/null 2>&1 && echo  "$f - OK" || echo "$f - FAIL" ; done'
-  
+  request="select ws.health_address from WITS_WELL ww inner join WITS_WELLBORE wb on (ww.id=wb.well_id) inner join WITS_SOURCE ws on (ws.id=ww.source_id) inner join WITS_WELL_PROP wp on (wb.well_id=wp.well_id and wp.status_id=3 and wb.status_id=3) ;"
+#для ребута по порту
+  ports=$($mysql_connect_to_database -e "$request" 2>/dev/null |grep -o -E :[0-9]{4} | tr -d  ':' ) 
+# Для ребута царичан.
+  health_address=$($mysql_connect_to_database -e "$request" 2>/dev/null  | grep 172.28 | sed 's/http:\/\///' )
+  $connect_to_server_ssh 'for f in '$ports' ; do curl http://127.0.0.1:${f}/axis?snapshots=on > /dev/null 2>&1 && echo  "$f - OK" || echo "$f - FAIL" ; done & for health in  '$health_address' ; do  curl http://${health}/axis?snapshots=on > /dev/null 2>&1 && echo  "$health - OK" || echo "$health - FAIL" ; done &'
+
+# Для ребута царичан.
+
+  #$connect_to_server_ssh 'for health in  '$health_address' ; do  curl http://${health}/axis?snapshots=on > /dev/null 2>&1 && echo  "$health - OK" || echo "$health - FAIL" ; done'
 }
 
 #Конвертер
@@ -551,6 +567,25 @@ con_kill () {
       sleep 45
     done
 
+}
+
+nice_file () {
+  local files=`echo $*`
+  for file in $files
+    do
+      file_name=$file
+      cat $file_name | tr -s "\t" '|' | column -t -s "|" > ${file_name}_nice
+      cat "${file_name}_nice" > $file_name
+      rm ${file_name}_nice
+    done
+}
+
+mys_select () {
+
+  reference=`mysql -h 192.168.0.135 -ugtionline -ptetraroot WMLS -e  "select * from WITS_ACTIVITY_TYPE order by id"`
+  reference=(`echo $reference`)
+  ndata=
+  echo -e ${reference[]}
 }
 
 #открывает выполняемые таски в отдельных окнах.
