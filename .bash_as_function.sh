@@ -227,6 +227,9 @@ esac
 if [[ $1 = 'h' || $1 = '-h' || $1 = 'help' || $1 = '--help' ]]
   then
   _command="101"
+elif [[ $1 = "update" ]] || [[ $1 = "updater" ]]
+  then
+  _command="update"
 else
   func_check_digit $1 >/dev/null #returned $gnum $box_adr
 fi
@@ -255,9 +258,9 @@ ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hos
 #чек версий админки и коннекта из боксера
 ssh_command_version="echo -e '${BBlue}Admin VERSION:${Color_Off} \n' ; head -1 ${path_g100_boxer}admin/version ; echo -e '\n${BBlue}Connect VERSION:${Color_Off}\n' ; head -3 ${path_g100_boxer}connect/version ; echo"
 #подключение к боксу через тунель
-ssh_command_tun=" bash --login -c 'echo -e Подключаемся к gbox-$gnum && sshpass -p $pass_for_g ssh -p 22$gnum ts@localhost' " # Не возврщает нормом bash
+ssh_command_tun="-t echo -e Подключаемся к gbox-$gnum && sshpass -p $pass_for_g ssh -p 22$gnum ts@localhost"
 #подключение к 100 и update
-ssh_command_update=""
+ssh_command_update="-t /home/support/bin/updater/update_br9k.sh"
 #подключаемся к 100 и выполняем черек $gnum
 ssh_command_check="bin/support_stash//eyeOdin/watchEyeOdin.sh $gnum"
 
