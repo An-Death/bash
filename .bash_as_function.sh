@@ -11,22 +11,6 @@ readonly SETCOLOR_CYAN="echo -en $BCyan"
 readonly SETCOLOR_RED="echo -en $Red"
 
 
-#Скрипт определения времени
-now () {
-variable_check $*
-case $1 in
-
-  esac
-local i=$(date)
-local d=$(date -d $1)
- echo $i $d
- if [[ $i < $d ]]
-  then
-  echo "true"
-else 
-  echo "false"
-fi
-}
 
 #Выводит ОК Fail
 color_check () {
@@ -202,6 +186,7 @@ func_ping () {
     ver|v|version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else _command="version" && path_g100_boxer="/home/support/bin/boxer/gbox-$gnum/home/ts/" ; fi ;;
     #updater
     update) _command="update" ;;
+    checker|check|chek|ck) _command="check_list" ;;
     #admin open
     admin) _command="admin_open" ;;
     #подключение к боксу по тунелю
@@ -270,7 +255,11 @@ ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hos
 #чек версий админки и коннекта из боксера
 ssh_command_version="echo -e '${BBlue}Admin VERSION:${Color_Off} \n' ; head -1 ${path_g100_boxer}admin/version ; echo -e '\n${BBlue}Connect VERSION:${Color_Off}\n' ; head -3 ${path_g100_boxer}connect/version ; echo"
 #подключение к боксу через тунель
-ssh_command_tun="echo -e 'Подключаемся к gbox-$gnum' && sshpass -p $pass_for_g ssh ts@localhost -p 22$gnum " # Не возврщает нормом bash
+ssh_command_tun=" bash --login -c 'echo -e Подключаемся к gbox-$gnum && sshpass -p $pass_for_g ssh -p 22$gnum ts@localhost' " # Не возврщает нормом bash
+#подключение к 100 и update
+ssh_command_update=""
+#подключаемся к 100 и выполняем черек $gnum
+ssh_command_check="bin/support_stash//eyeOdin/watchEyeOdin.sh $gnum"
 
 case $_command in
   check_list|info|count|update|tun|version) connection="g100" ;;
@@ -278,30 +267,29 @@ case $_command in
 esac
 
 case $_command in
-ssh) ssh_command=$ssh_command_default ;;
-restart) ;;
-stop) ;;
-start) ;;
-count) ;;
-server_ip) ;;
-info) ;;
-log) ;;
-send_command) ;;
-check_list) ;;
-copy) ;;
-box_back) ;;
-subl) ;;
-update) ;;
-admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;;
-tun) ssh_command=$ssh_command_tun ;;
-interfaces) ;; 
-mys_sbor) ;;
-mus_local) ;;
-version) ssh_command=$ssh_command_version ;;
+ssh) ssh_command=$ssh_command_default ;; # подключение по ссш
+restart) ;; #рестарт коннект(ов)
+stop) ;; #стоп коннект(ов)
+start) ;; #старт коннект(ов)
+count) ;; #вывод количества коннектов и имена папок
+server_ip) ;; #Вывод и Опеределение IP серверов по всем коннектам
+info) ;; #Вывод грепа по конфигам
+log) ;; #Вывод логов + multitail  
+check_list) ssh_command=$ssh_command_check ;; #Вывод чеклиста бокса
+copy) ;; #Копи конфигов с бокса - эквивалент gc () разница только в том, что качает дополнительно все фильтры
+box_back) ;; #Аналогично gb() только с фильтрами
+subl) ;; #Открывает в саблайме необходимые настройки
+update) ssh_command=$ssh_command_update ;; #Запускает update на сотом
+admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;; #Открывает админку
+tun) ssh_command=$ssh_command_tun ;; #Идёт на бокс через тунель.
+interfaces) ;; #Выводин интерфейсы с 100, если фаил в локальной папке обновлялся не текущим днём
+mys_sbor) ;; #проверяет порты и базу MYSQL для welldata или MSSQL для AMТ
+mus_local) ;; #Подключается к локальной базе бокса
+version) ssh_command=$ssh_command_version ;; # версия с боксера
 version_box) ssh_command=$ssh_command_version ;; #head версий с бокса
-exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ;;
-101) func_help $_func_name ;;
-ping) func_ping $gnum & return 1 ;;
+exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ;;  #выполняет переданную команду по ссш
+101) func_help $_func_name ;; #выводит хелп
+ping) func_ping $gnum & return 1 ;; # Запускает цикл с постоянной проверкой на пинг бокса. Если бокс пингуется выводит нотифай.
 esac  
 
 func_connect_to $ssh_command
