@@ -124,7 +124,7 @@ end;
 drop procedure if exists clear;
 create procedure clear()
 begin
-        SET @network := 10;
+        SET @network := 15;
 
         DELETE FROM WITS_USER where network_id != @network;
         DELETE FROM WITS_USER_GROUP where network_id != @network;
@@ -168,6 +168,8 @@ end;
 DROP PROCEDURE if exists change_value_procedure_200;
 	create procedure change_value_procedure_200()
 	begin
+		set @@sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+
 		 create TEMPORARY TABLE WITS_CHANGING_IDS as (select wld.lith_in as LITH_IN, wmd.lith_in as MUD_IN, wmlt.id as old_id ,wmltnew.id as new_id from WITS_MUDLOG_LITH_TYPE wmlt LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_MUDLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wmd ON (wmlt.id=wmd.value) LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_LITHLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wld ON (wmlt.id=wld.value) left outer join WITS_MUDLOG_LITH_TYPE_NEW wmltnew on (wmltnew.name=wmlt.name) where  wmlt.id>0 and wmltnew.id!=wmlt.id group by wmltnew.id order by wmlt.id); 
 		 delete from WITS_CHANGING_IDS where LITH_IN is null and MUD_IN is null ;
 
@@ -224,6 +226,7 @@ UPDATE WITS_MUDLOG_DATA SET idx_id=idx_id+72271;
 
 UPDATE WITS_MUDLOG_IMAGE SET idx_id=idx_id+10;
 
+
 //
 "
 
@@ -248,9 +251,10 @@ $color_off
 $mysql_connect -A -e "$mysql_quere" 
 $mysql_connect -A -e "$mysql_update_id_quere" 
 
-$mysql_dump "WITS_LITHLOG_IDX WITS_MUDLOG_IDX WITS_MUDLOG_IMAGE_IDX lba_image_idx WITS_MUDLOG_LITH_TYPE" > /tmp/H5.dump
+$mysql_dump WITS_LITHLOG_IDX WITS_MUDLOG_IDX WITS_MUDLOG_IMAGE_IDX WITS_MUDLOG_IMAGE lba_image_idx lba_image WITS_MUDLOG_LITH_TYPE WITS_LITHLOG_DATA WITS_MUDLOG_DATA  > /tmp/H5.dump
 if [ -f  /tmp/H5.dump ] ; then
-	$color_green "Создан дамп /tmp/H5.dump"
+	$color_green 
+	echo "Создан дамп /tmp/H5.dump"
 	 $color_off
 else
 	$color_red "Ошибка. Дамп не создан"
