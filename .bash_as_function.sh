@@ -144,6 +144,23 @@ local box_adr=
     notify-send "GBOX-$gnum OK" "gbox-$gnum доступен. \n PING OFF" && return 0 
   }
 
+  interfaces_func () {  # Возвращает содержимое interfaces, если последняя дата изменения файла менее 24ч # Иначе возвращет shh_command
+    local local_interfaces_file=$(find ./$gnum/ -name interfaces -mtime -1 2>/dev/null)
+    stop=
+    if [ -z $local_interfaces_file ]
+    then
+      ssh_command=$ssh_command_interfaces
+    else
+      cat $local_interfaces_file 
+    fi
+    echo $ssh_command
+    if [ -z $ssh_command ]
+      then
+      stop=1
+    else  
+      stop=0
+    fi
+  }
 
   func_check_cases () {
     local g100_boxer=
@@ -184,6 +201,8 @@ local box_adr=
     oc) _command="subl" ; config="$2" ;;
     #head version admin & connect
     ver|v|version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else  g100_boxer="exist" && _command="version" ; fi ;;
+    #interfaces
+    interfaces|inter|int) _command="interfaces" ;;
     #updater
     update) _command="update" ;;
     checker|check|chek|ck) _command="check_list" ;;
@@ -275,7 +294,7 @@ local ssh_command_check="bin/support_stash//eyeOdin/watchEyeOdin.sh $gnum"
 #c 100 берём колличество коннектов и какой к какому серверу относится
 local sed_plugin="-e 's/\.\.\/pluginB\//Плагин\ /g'"
 local ssh_command_count='cd '${path_g100_boxer}'/; for connect in `ls -d connect*` ; do echo -en "\n\e[34;1m" $connect "\e[0m" ; echo -e "\e[0;92m" ; grep send_to $connect/connect.conf |  tr -s "=" " " ; grep well= $connect/connect.conf | tr -d "well=" ; plugin=`readlink $connect/plugin/Proxy.jar`; echo $plugin | sed '$sed_plugin'; echo ; echo $plugin | cut -d/ -f3| cut --delimiter=P -f1 | xargs -i grep -i {} $connect/connect.conf | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" ; echo -en "\e[0m" ; done ; echo'
-
+local ssh_command_interfaces='cd '${path_g100_boxer}'/ ; cat ../../etc/network/interfaces '
 
 
 case $_command in
@@ -289,17 +308,14 @@ restart) ;; #рестарт коннект(ов)
 stop) ;; #стоп коннект(ов)
 start) ;; #старт коннект(ов)
 count) ssh_command=$ssh_command_count ;; #вывод количества коннектов и имена папок
-server_ip) ;; #Вывод и Опеределение IP серверов по всем коннектам
 info) ;; #Вывод грепа по конфигам
 log) ;; #Вывод логов + multitail  
 check_list) ssh_command=$ssh_command_check ;; #Вывод чеклиста бокса
-copy) ;; #Копи конфигов с бокса - эквивалент gc () разница только в том, что качает дополнительно все фильтры
-box_back) ;; #Аналогично gb() только с фильтрами
 subl) ;; #Открывает в саблайме необходимые настройки
 update) ssh_command=$ssh_command_update ;; #Запускает update на сотом
 admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;; #Открывает админку
 tun) ssh_command=$ssh_command_tun ;; #Идёт на бокс через тунель.
-interfaces) ;; #Выводин интерфейсы с 100, если фаил в локальной папке обновлялся не текущим днём
+interfaces) interfaces_func $gnum $ssh_command_interfaces ; if [ $stop -eq 1 ]; then return 1 ; fi ;; #Выводин интерфейсы с 100, если фаил в локальной папке обновлялся не текущим днём
 mys_sbor) ;; #проверяет порты и базу MYSQL для welldata или MSSQL для AMТ
 mus_local) ;; #Подключается к локальной базе бокса
 version)  ssh_command=$ssh_command_version ;; # версия с боксера
