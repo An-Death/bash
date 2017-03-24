@@ -162,22 +162,51 @@ local box_adr=
     fi
   }
 
+  func_start_connect () { # возвращает описание и комманду для старта
+  #Запуск коннекта осуществляется на основе или из файла start_connect.sh
+    ssh_command_start='start_connect=$(find /home/ts/ -type f -name start_connect.sh -executable); if [ -z $start_connect ] ; then echo -e "\e[31;1;3;4m" "Фаил $start_connect отсутствует, или не исполняемый. \n Провертьте фаил!" -e "\e[0m" && ls -la'
+    if [ -z $cn ] || [[ $cn == "1" ]] ; then
+      cn=''
+      ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
+    elif [[ $ch == "all" ]] ; then
+      cn="все"
+      ssh_command_start='$ssh_command_start ; else $start_connect echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
+    elif [[ $cn =~ [^[2-9]{1}$] ]] ; then
+        ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
+    fi
+    ssh_descript_start='echo -e "Запускаем $cn коннект на gbox-$gnum" ; '
+    ssh_descript=$ssh_descript_start
+    ssh_command=$ssh_command_start
+  }
+
+  func_stop_connect () {
+    echo "ecmpty"
+  }
+
   func_check_cases () {
     local g100_boxer=
 
     case $1 in
     #connect restart
-    cr) _command="restart"; cn="$2" ;;
+    cr|cres|crestart) _command="restart"; case $2 in
+      --all|-a|a|all|"") cn="" ;;
+      -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
+      ^[1-9]{1}$) cn="$2" ;;
+      *) echo -n "Введите номер коннекта: " ; read cn ;;
+      esac ;; 
     #connect_stop
     cstop) _command="stop" ; case $2 in
       --all|-a|a|all|"") cn="" ;;
+      -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
       ^[1-9]{1}$) cn="$2" ;;
-      *) cn="" ;;
+      *) echo -n "Введите номер коннекта: " ; read cn ;;
       esac ;; 
     #connect_start
     cstart) _command="start" ; case $2 in
       --all|-a|a|all ) cn="all";;
+      -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
       ^[1-9]{1}$) cn="$2" ;;
+      *) echo -n "Введите номер коннекта: " ; read cn ;;
       esac ;;  
     #connect count
     cc) _command="count" ;; 
@@ -256,10 +285,10 @@ fi
 if [ -z $2 ]
   then
   _command="ssh"
-elif ( [[ "$2" -eq 1 ]] )
+elif [[ "$2" -eq 1 ]] 
   then
-  _command="ssh"
-elif ( [[ "$2" =~ ^[2-9]{1}$ ]] )
+  command="ssh"
+elif [[ "$2" =~ ^[2-9]{1}$ ]]
   then
     _command="ssh"
     vpn_selector=(`echo -n "$2"`)
@@ -305,8 +334,8 @@ esac
 case $_command in
 ssh) ssh_command=$ssh_command_default ;; # подключение по ссш
 restart) ;; #рестарт коннект(ов)
-stop) ;; #стоп коннект(ов)
-start) ;; #старт коннект(ов)
+stop) func_stop_connect $gnum $cn ;; #стоп коннект(ов)
+start) func_start_connect $gnum $cn ;; #старт коннект(ов)
 count) ssh_command=$ssh_command_count ;; #вывод количества коннектов и имена папок
 info) ;; #Вывод грепа по конфигам
 log) ;; #Вывод логов + multitail  
