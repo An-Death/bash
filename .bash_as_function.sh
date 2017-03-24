@@ -114,39 +114,39 @@ function g () {
 _func_name="g"
 local gnum=
 local box_adr=
+
 #проверка наличия переменных
   variable_check $*
 
 #проверка первой переменной на digit или ip или gbox для g
-func_check_digit () {
+  func_check_digit () {
 
-  if `echo $1 | grep  -m 1 -qE "[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}"`
-  then
-    gnum=`nmblookup -A $1| grep -m 1 -oE "GBOX-[[:digit:]]{2,4}" | grep -oE "[[:digit:]]{2,4}"` ||  (echo "По указанному ip находится не GBOX" 1>&2 ; return 1 )
-    box_adr="$1"
-  else
-    if [[ "${#1}" -lt 2 ]]
-      then
-        gnum="0${1}"
-      else 
-        gnum="$1"
+    if `echo $1 | grep  -m 1 -qE "[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}"`
+    then
+      gnum=`nmblookup -A $1| grep -m 1 -oE "GBOX-[[:digit:]]{2,4}" | grep -oE "[[:digit:]]{2,4}"` ||  (echo "По указанному ip находится не GBOX" 1>&2 ; return 1 )
+      box_adr="$1"
+    else
+      if [[ "${#1}" -lt 2 ]]
+        then
+          gnum="0${1}"
+        else 
+          gnum="$1"
+      fi
+      box_adr="gbox-$gnum"
     fi
-    box_adr="gbox-$gnum"
-  fi
-  pass_g $gnum;
-}
+    pass_g $gnum;
+  }
 
-func_ping () {
-  while true ; do 
-  ping -c 1 gbox-$gnum >/dev/null 2>&1 && break 
-  done
-  notify-send "GBOX-$gnum OK" "gbox-$gnum доступен. \n PING OFF" && return 0 
-}
+  func_ping () {
+    while true ; do 
+    ping -c 1 gbox-$gnum >/dev/null 2>&1 && break 
+    done
+    notify-send "GBOX-$gnum OK" "gbox-$gnum доступен. \n PING OFF" && return 0 
+  }
 
 
   func_check_cases () {
-    #обнуление переменных
-    path_g100_boxer=""
+    local g100_boxer=
 
     case $1 in
     #connect restart
@@ -183,7 +183,7 @@ func_ping () {
     #open any configs
     oc) _command="subl" ; config="$2" ;;
     #head version admin & connect
-    ver|v|version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else _command="version" && path_g100_boxer="/home/support/bin/boxer/gbox-$gnum/home/ts/" ; fi ;;
+    ver|v|version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else  g100_boxer="exist" && _command="version" ; fi ;;
     #updater
     update) _command="update" ;;
     checker|check|chek|ck) _command="check_list" ;;
@@ -202,8 +202,8 @@ func_ping () {
     h|-h|--h|help|-help|--help) _command="101" ;;
     #отправка непосредственно комманды
     *) _command="exec" ; command_is="$1";;
-esac
-}
+    esac
+  }
 
 #  if [ -z "$3" ] 
 #    then 
@@ -231,7 +231,8 @@ elif [[ $1 = "update" ]] || [[ $1 = "updater" ]]
   then
   _command="update"
 else
-  func_check_digit $1 >/dev/null #returned $gnum $box_adr
+  func_check_digit $1 >/dev/null 
+  #return ${gnum} ${box_adr}
 fi
 if [ -z $2 ]
   then
@@ -248,21 +249,34 @@ else
   func_check_cases "$2" "$3" $4 $5
 fi
 
+#определяем путь до файлов на 100.
+local path_g100_boxer="/home/support/bin/boxer/gbox-$gnum/home/ts/"
+if [ -z $g100_boxer ] ; then
+  g100_boxer=$path_g100_boxer
+  else
+    g100_boxer=""
+fi
+#
 
-ssh_descript="Заходим на ${COLOR_BLUE}gbox-$gnum\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS:\n$(nslookup gbox-$gnum) \n" 
-ssh_command_default="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr  >> /home/ts/backup/tools/logins.log ; cat /etc/motd; cd connect$cn/ ; bash -l;"
-ssh_command_row=""
+local ssh_descript="Заходим на ${COLOR_BLUE}gbox-$gnum\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS:\n$(nslookup gbox-$gnum) \n" 
+local ssh_command_default="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr  >> /home/ts/backup/tools/logins.log ; cat /etc/motd; cd connect$cn/ ; bash -l;"
+local ssh_command_row=""
 #отправка команды на прямую
-ssh_descript_exec="Отправляем команду - ${COLOR_RED}$command_is${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})"
-ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr executed : $command_is >> /home/ts/backup/tools/logins.log && $command_is"
+local ssh_descript_exec="Отправляем команду - ${COLOR_RED}$command_is${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})"
+local ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr executed : $command_is >> /home/ts/backup/tools/logins.log && $command_is"
 #чек версий админки и коннекта из боксера
-ssh_command_version="echo -e '${BBlue}Admin VERSION:${Color_Off} \n' ; head -1 ${path_g100_boxer}admin/version ; echo -e '\n${BBlue}Connect VERSION:${Color_Off}\n' ; head -3 ${path_g100_boxer}connect/version ; echo"
+local ssh_command_version="echo -e '${BBlue}Admin VERSION:${Color_Off} \n' ; head -1 ${g100_boxer}admin/version ; echo -e '\n${BBlue}Connect VERSION:${Color_Off}\n' ; head -3 ${g100_boxer}connect/version ; echo"
 #подключение к боксу через тунель
-ssh_command_tun="-t echo -e Подключаемся к gbox-$gnum && sshpass -p $pass_for_g ssh -p 22$gnum ts@localhost"
+local ssh_command_tun="-t echo -e Подключаемся к gbox-$gnum && sshpass -p $pass_for_g ssh -p 22$gnum ts@localhost"
 #подключение к 100 и update
-ssh_command_update="-t /home/support/bin/updater/update_br9k.sh"
+local ssh_command_update="-t /home/support/bin/updater/update_br9k.sh"
 #подключаемся к 100 и выполняем черек $gnum
-ssh_command_check="bin/support_stash//eyeOdin/watchEyeOdin.sh $gnum"
+local ssh_command_check="bin/support_stash//eyeOdin/watchEyeOdin.sh $gnum"
+#c 100 берём колличество коннектов и какой к какому серверу относится
+local sed_plugin="-e 's/\.\.\/pluginB\//Плагин\ /g'"
+local ssh_command_count='cd '${path_g100_boxer}'/; for connect in `ls -d connect*` ; do echo -en "\n\e[34;1m" $connect "\e[0m" ; echo -e "\e[0;92m" ; grep send_to $connect/connect.conf |  tr -s "=" " " ; grep well= $connect/connect.conf | tr -d "well=" ; plugin=`readlink $connect/plugin/Proxy.jar`; echo $plugin | sed '$sed_plugin'; echo ; echo $plugin | cut -d/ -f3| cut --delimiter=P -f1 | xargs -i grep -i {} $connect/connect.conf | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" ; echo -en "\e[0m" ; done ; echo'
+
+
 
 case $_command in
   check_list|info|count|update|tun|version) connection="g100" ;;
@@ -274,7 +288,7 @@ ssh) ssh_command=$ssh_command_default ;; # подключение по ссш
 restart) ;; #рестарт коннект(ов)
 stop) ;; #стоп коннект(ов)
 start) ;; #старт коннект(ов)
-count) ;; #вывод количества коннектов и имена папок
+count) ssh_command=$ssh_command_count ;; #вывод количества коннектов и имена папок
 server_ip) ;; #Вывод и Опеределение IP серверов по всем коннектам
 info) ;; #Вывод грепа по конфигам
 log) ;; #Вывод логов + multitail  
@@ -288,7 +302,7 @@ tun) ssh_command=$ssh_command_tun ;; #Идёт на бокс через туне
 interfaces) ;; #Выводин интерфейсы с 100, если фаил в локальной папке обновлялся не текущим днём
 mys_sbor) ;; #проверяет порты и базу MYSQL для welldata или MSSQL для AMТ
 mus_local) ;; #Подключается к локальной базе бокса
-version) ssh_command=$ssh_command_version ;; # версия с боксера
+version)  ssh_command=$ssh_command_version ;; # версия с боксера
 version_box) ssh_command=$ssh_command_version ;; #head версий с бокса
 exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ;;  #выполняет переданную команду по ссш
 101) func_help $_func_name ;; #выводит хелп
