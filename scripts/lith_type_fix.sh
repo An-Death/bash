@@ -71,10 +71,87 @@ begin
 	  name varchar(255) NOT NULL DEFAULT 'unassigned',
 	  name_ru varchar(255) NOT NULL DEFAULT 'не классифицировано',
 	  file_name varchar(255) DEFAULT NULL,
-	  KEY id (id)
+	  PRIMARY KEY id (id)
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-	INSERT INTO WITS_MUDLOG_LITH_TYPE_NEW VALUES (1,'dispersed chert','рассеянный кремень',NULL),(2,'chert','кремень',NULL),(3,'silicified claystone','аргиллит',NULL),(4,'shale (clay)','глина',NULL),(5,'silty shale (silty clay)','алевритистая глина','4'),(6,'sandy shale','песчанистая глина','4'),(7,'marl','мергель',NULL),(8,'silty marl','алевритистый мергель',NULL),(9,'sandy marl','песчанистый мергель',NULL),(10,'silt','алеврит',NULL),(11,'fine grained sand','песок мелкозернистый',NULL),(12,'sand','песок',NULL),(13,'coarse grained sand','песок крупнозернистый',NULL),(14,'pebbles','галька',NULL),(15,'gravels','гравий',NULL),(16,'siltstone','алевролит',NULL),(17,'sandstone','песчаник',NULL),(18,'conglomerate','конгломерат',NULL),(19,'breccia','брекчия',NULL),(20,'limestone (argillaceous)','известняк глинистый',NULL),(21,'limestone (w chert nodule','известняк с кремниевыми конкрециями',NULL),(22,'limestone (silicified)','известняк кремнистый',NULL),(23,'limestone (dolomitic)','известняк доломитистый',NULL),(24,'limestone (chalk)','известняк мел',NULL),(25,'limestone (general)','известняк',NULL),(26,'mudstone','аргиллит известковистый',NULL),(27,'wackstone','мергель пелитоморфный',NULL),(28,'packstone','известняк обломочный',NULL),(29,'grainstone','известняк зернистый',NULL),(30,'boundstone','известняк строматолитовый',NULL),(31,'dolomite calcareous','доломит известковистый',NULL),(32,'dolomite','доломит',NULL),(33,'gypsum','гипс',NULL),(34,'Na, K, Mg salts','каменная соль',NULL),(35,'coal','уголь',NULL),(36,'extrusive rocks','вулканические породы',NULL),(37,'intrusive rocks','интрузивные породы',NULL),(38,'metamorphic rocks','метаморфические породы',NULL),(39,'volcanic elements','вулканогенный материал',NULL),(40,'unassigned','не классифицировано',NULL),(41,'sand (clay)','песок глинистый',NULL),(42,'chalk','мел',NULL),(43,'anhydrite','ангидрит',NULL),(44,'phosphates','фосфаты',NULL),(45,'peat','торф',NULL),(46,'crystalline basement','кристал. фундамент',NULL),(47,'quartzite','кварцит',NULL),(48,'bituminous clay','битуминозная глина','4'),(49,'bituminous mudstone','аргил. битум','3'),(50,'fine grained sandstone','песчаник мелкозернистый',NULL),(51,'gravelite','гравелит',NULL),(52,'sandy loam','сугленок супесь',NULL),(53,'interbedded sandstone and siltstone','переслаивание песчаника, аргилита и алевролита',NULL),(-1000,'no data','данные отсутствуют',NULL),(-2000,'incorrect data','ошибка ввода данных',NULL),(54,'anthracite','антрацит','7'),(55,'dolerite','долерит',NULL),(56,'dolomite argillaceous','доломит глинистый',NULL),(57,'clay calcareous ','глина известковистая','4');
+	INSERT INTO WITS_MUDLOG_LITH_TYPE_NEW VALUES ( 1, 'dispersed chert', 'рассеянный кремень', 1 ), 
+( 2, 'chert', 'кремень', 1 ), 
+( 3, 'silicified claystone', 'окремнелый аргиллит ', 2 ), 
+( 4, 'shale (clay)', 'сланец (глина)', 3 ), 
+( 5, 'silty shale', 'алевритистая глина', 4 ), 
+( 6, 'sandy shale', 'песчанистая глина', 5 ), 
+( 7, 'marl', 'мергель', 6 ), 
+( 8, 'silty marl', 'алевритистый мергель', 7 ), 
+( 9, 'sandy marl', 'песчанистый мергель', 8 ), 
+( 10, 'silt', 'алеврит', 9 ), 
+( 11, 'fine grained sand', 'песок мелкозернистый', 10 ), 
+( 12, 'sand', 'песок', 11 ), 
+( 13, 'Coarse grained sand', 'песок крупнозернистый', 12 ), 
+( 14, 'pebbles', 'галька', 13 ), 
+( 15, 'gravels', 'гравий', 14 ), 
+( 16, 'siltstone', 'алевролит', 15 ), 
+( 17, 'sandstone', 'песчаник', 16 ), 
+( 18, 'conglomerate', 'конгломерат', 17 ), 
+( 19, 'breccia', 'брекчия', 18 ), 
+( 20, 'limestone (argillaceous)', 'известняк глинистый ', 19 ), 
+( 21, 'limestone (w chert nodule)', 'известняк с кремниевыми конкрециями', NULL ), 
+( 22, 'limestone (silicified)', 'известняк кремнистый', NULL ), 
+( 23, 'limestone (dolomitic)', 'Известняк доломитистый', 22 ), 
+( 24, 'Limestone (chalk)', 'Известняк мел', NULL ), 
+( 25, 'Limestone (general)', 'известняк', 24 ), 
+( 26, 'mudstone', 'Аргиллит известковистый', NULL ), 
+( 27, 'wackstone', 'Мергель пелитоморфный', NULL ), 
+( 28, 'packstone', 'Известняк обломочный', NULL ), 
+( 29, 'grainstone', 'Известняк зернистый ', NULL ), 
+( 30, 'boundstone', 'Известняк строматолитовый', NULL ), 
+( 31, 'Dolomite calcareous', 'Доломит известковистый', 30 ), 
+( 32, 'dolomite', 'доломит', 31 ), 
+( 33, 'gypsum', 'гипс', 32 ), 
+( 34, 'Na,K,Mg salts ', 'Каменная соль', 33 ), 
+( 35, 'coal', 'уголь', 34 ), 
+( 36, 'Extrusive rocks', 'вулканические породы', 35 ), 
+( 37, 'Intrusive rocks', 'интрузивные породы', 36 ), 
+( 38, 'Metamorphic rocks', 'метаморфические породы', 37 ), 
+( 39, 'Volcanic elements', 'Вулканогенный материал', 38 ), 
+( 40, 'unassigned', 'Не классифицировано', 39 ), 
+( 41, 'Sand (clay)', 'Песок глинистый ', 40 ), 
+( 42, 'chalk', 'мел', 41 ), 
+( 43, 'anhydrite', 'ангидрит', 42 ), 
+( 44, 'phosphates', 'фосфаты', 43 ), 
+( 45, 'peat', 'торф', 44 ), 
+( 46, 'Crystalline basement', 'кристал. фундамент', 45 ), 
+( 47, 'quartzite', 'кварцит', 46 ), 
+( 48, 'argillite', 'аргиллит', 2 ), 
+( 49, 'clay', 'глина', NULL ), 
+( 50, 'glauconite', 'глауконит', 48 ), 
+( 51, 'dolomite argillaceous', 'доломит глинистый', NULL ), 
+( 52, 'iltstone interbedded with sandstone', 'алевролит с прослоями песчаника', NULL ), 
+( 53, 'siltstone interbedded with mudstone', 'алевролит с прослоями аргиллита', NULL ), 
+( 54, 'Siltstone interbedded with mudstone', 'алевролит с прослоями аргиллита', NULL ), 
+( 55, 'mudstone interbedded with siltstone', 'аргиллит с прослоями алевролита', NULL ), 
+( 56, 'mudstone interbedded with sandstone', 'аргиллит с прослоями песчаника', NULL ), 
+( 57, 'sandstone interbedded with siltstone', 'песчаник с прослоями алевролита', NULL ), 
+( 58, 'bituminous mudstone', 'аргиллит битуминозный', NULL ), 
+( 59, 'fine grained sandstone', 'песчаник мелкозернистый', NULL ), 
+( 60, 'gravelite', 'гравелит', NULL ), 
+( 61, 'interbedded sandstone and siltstone', 'переслаивание песчаника, аргиллита и алевролита', NULL ), 
+( 62, 'sandstone interbedded with mudstone', 'песчаник с прослоями аргиллита', NULL ), 
+( 63, 'Siltstone interbedded with mudstone and siltstone', 'песчаник с прослоями аргиллита и алевролита', NULL ), 
+( 64, 'mudstone interbedded with siltstone and sandstone', 'аргиллит с прослоями алевролита и песчаника', NULL ), 
+( 65, 'granite', 'гранит', NULL ), 
+( 66, 'dolerite', 'долерит', NULL ), 
+( 67, 'siltstone interbedded with shale', 'Алевролит с прослоями глин', NULL ), 
+( 68, 'siltstone interbedded with shale', 'Глина с прослоями алевролита', NULL ), 
+( 69, 'slate', 'сланец', NULL ), 
+( 70, 'other', 'прочее', NULL ), 
+( 71, 'weathering crust', 'кора выветривания', NULL ), 
+( 72, 'dolomite anhydrite', 'Доломит ангидрит', NULL ), 
+( 73, 'shale interbedded with siltstone', 'Глина с прослоями алевролита', NULL ), 
+( 74, 'cement', 'цемент', NULL ), 
+( -1000, 'no data ', 'данные отсутствуют', NULL ), 
+( -2000, 'incorrect data ', 'ошибка ввода данных', NULL );
+
+UPDATE WITS_MUDLOG_LITH_TYPE_NEW wn left outer join WITS_MUDLOG_LITH_TYPE wo on (wn.name=wo.name or wn.name_ru=wo.name_ru) set wn.file_name = wo.file_name;
 
 
  /* 3 часть.
@@ -83,7 +160,7 @@ begin
 
 /*запихиваем все несоответствия во временную таблицу*/
 	DROP TABLE IF exists LITH_TYPE_DIFF; 
-	CREATE TEMPORARY TABLE LITH_TYPE_DIFF AS (SELECT old.id,old.name as 'OLD_name', old.name_ru as 'OLD_RU' , old.file_name,new.id as 'NEW_ID',new.name as 'NEW_name',new.name_ru as 'NEW_RU' FROM WITS_MUDLOG_LITH_TYPE old left outer join WITS_MUDLOG_LITH_TYPE_NEW new on (old.name=new.name) where  new.id is null order by old.id);
+	CREATE TEMPORARY TABLE LITH_TYPE_DIFF AS (SELECT old.id,old.name as 'OLD_name', old.name_ru as 'OLD_RU' , old.file_name,new.id as 'NEW_ID',new.name as 'NEW_name',new.name_ru as 'NEW_RU' FROM WITS_MUDLOG_LITH_TYPE old left outer join WITS_MUDLOG_LITH_TYPE_NEW new on (old.name=new.name and old.name_ru=new.name_ru) where  new.id is null order by old.id);
 	select comment from COMMENT_TABLE_FOR_LITH_TYPE_FIX where id=1;
 	select * from LITH_TYPE_DIFF;
 
@@ -170,7 +247,8 @@ DROP PROCEDURE if exists change_value_procedure_200;
 	begin
 		set @@sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 
-		 create TEMPORARY TABLE WITS_CHANGING_IDS as (select wld.lith_in as LITH_IN, wmd.lith_in as MUD_IN, wmlt.id as old_id ,wmltnew.id as new_id from WITS_MUDLOG_LITH_TYPE wmlt LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_MUDLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wmd ON (wmlt.id=wmd.value) LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_LITHLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wld ON (wmlt.id=wld.value) left outer join WITS_MUDLOG_LITH_TYPE_NEW wmltnew on (wmltnew.name=wmlt.name) where  wmlt.id>0 and wmltnew.id!=wmlt.id group by wmltnew.id order by wmlt.id); 
+		DROP TABLE IF EXISTS WITS_CHANGING_IDS;
+		 create TEMPORARY TABLE WITS_CHANGING_IDS as (select wld.lith_in as LITH_IN, wmd.lith_in as MUD_IN, wmlt.id as old_id ,wmltnew.id as new_id, wmlt.name as old_name, wmltnew.name as new_name from WITS_MUDLOG_LITH_TYPE wmlt LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_MUDLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wmd ON (wmlt.id=wmd.value) LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_LITHLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wld ON (wmlt.id=wld.value) left outer join WITS_MUDLOG_LITH_TYPE_NEW wmltnew on (wmltnew.name=wmlt.name) where  wmlt.id>0 and wmltnew.id!=wmlt.id group by wmltnew.id order by wmlt.id); 
 		 delete from WITS_CHANGING_IDS where LITH_IN is null and MUD_IN is null ;
 
 		update WITS_MUDLOG_DATA ld inner join WITS_CHANGING_IDS wci on (wci.old_id=ld.value and mnemonic like 'CODELITH%' ) set ld.value=new_id;
@@ -194,7 +272,6 @@ delimiter ;
 
 
 call prepeare_base;
-call clear;
 call change_value_procedure_200;
 call clear_the_way_for_new;
 
