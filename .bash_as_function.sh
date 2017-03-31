@@ -619,6 +619,14 @@ con_kill () {
 
 }
 
+pbc () {
+  variable_check $*
+  local table=$1
+
+    mysql -h $base_path -u $base_username -p${base_password} $base_name -e "desc $table" |  awk '{ print $1 " = " "Column(" $2 ")" $3 $4 }' | sed -e 's/bigint(20)/Integer/;s/varchar/String/;s/double/DOUBLE/;s/datetime/DateTime/;s/float/Float/'
+
+}
+
 nice_file () {
   local files=`echo $*`
   for file in $files
@@ -628,14 +636,6 @@ nice_file () {
       cat "${file_name}_nice" > $file_name
       rm ${file_name}_nice
     done
-}
-
-mys_select () {
-
-  reference=`mysql -h 192.168.0.135 -ugtionline -ptetraroot WMLS -e  "select * from WITS_ACTIVITY_TYPE order by id"`
-  reference=(`echo $reference`)
-  ndata=
-  echo -e ${reference[]}
 }
 
 #открывает выполняемые таски в отдельных окнах.
@@ -768,7 +768,7 @@ alarms_function () {
 # g_off в периоде
 g_off_p () {
 
-  local default="igs bn gn ssk e 4 sggf"
+  local default="n igs bn gn ssk e 4 sggf"
   local cycle_counter=1
   if [ -z $1 ]
     then
