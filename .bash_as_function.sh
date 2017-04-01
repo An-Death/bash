@@ -164,7 +164,7 @@ local box_adr=
 
   func_start_connect () { # возвращает описание и комманду для старта
   #Запуск коннекта осуществляется на основе или из файла start_connect.sh
-    ssh_command_start='start_connect=$(find /home/ts/ -type f -name start_connect.sh -executable); if [ -z $start_connect ] ; then echo -e "\e[31;1;3;4m" "Фаил $start_connect отсутствует, или не исполняемый. \n Провертьте фаил!" -e "\e[0m" && ls -la'
+    local ssh_command_start='start_connect=$(find /home/ts/ -type f -name start_connect.sh -executable); if [ -z $start_connect ] ; then echo -e "\e[31;1;3;4m" "Фаил $start_connect отсутствует, или не исполняемый. \n Провертьте фаил!" -e "\e[0m" && ls -la'
     if [ -z $cn ] || [[ $cn == "1" ]] ; then
       cn=''
       ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
@@ -173,14 +173,29 @@ local box_adr=
       ssh_command_start='$ssh_command_start ; else $start_connect echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
     elif [[ $cn =~ [^[2-9]{1}$] ]] ; then
         ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
+    else
+      echo -e $BRed"Не определён номер коннекта!" $Color_Off
     fi
-    ssh_descript_start='echo -e "Запускаем $cn коннект на gbox-$gnum" ; '
+    local ssh_descript_start='echo -e $BWhite"Запускаем $BRed $cn $BWhite коннект на gbox-$gnum"$Color_Off ; '
     ssh_descript=$ssh_descript_start
     ssh_command=$ssh_command_start
   }
 
   func_stop_connect () {
-    echo "ecmpty"
+    local ssh_command_stop='kill `ps  flax |grep Duser.timezone.*stream.kernel.Bootloader |grep /home/ts/connect$cn/ |sed "s/\ \ */\ /g" | cut -d\  -f4,3`'
+    if [ -z $cn ] || [[ $cn == '1' ]]; then
+      cn=''
+      ssh_command_stop=$ssh_command_stop
+    elif [[ $cn == 'all' ]]; then
+      cn="все"
+      ssh_command_stop='pkill -f "^(java|./run).*Duser.timezone.*/home/ts/connect/lib/connect.jar"'
+    elif [[ $cn =~ [^[2-9]{1}$] ]] ; then
+      ssh_command_stop=$ssh_command_stop
+    else
+      echo -e $BRed"Не определён номер коннекта!" $Color_Off
+    fi
+    local ssh_descript_stop='echo -e $BWhite "Останавливаем $BRed $cn $BWhite коннект на gbox-$gnum! "$Color_Off'
+
   }
 
   func_check_cases () {
