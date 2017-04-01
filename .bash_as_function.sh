@@ -162,67 +162,45 @@ local box_adr=
     fi
   }
 
-  func_start_connect () { # возвращает описание и комманду для старта
-  #Запуск коннекта осуществляется на основе или из файла start_connect.sh
-    local ssh_command_start='start_connect=$(find /home/ts/ -type f -name start_connect.sh -executable); if [ -z $start_connect ] ; then echo -e "\e[31;1;3;4m" "Фаил $start_connect отсутствует, или не исполняемый. \n Провертьте фаил!" -e "\e[0m" && ls -la'
-    if [ -z $cn ] || [[ $cn == "1" ]] ; then
-      cn=''
-      ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
-    elif [[ $ch == "all" ]] ; then
-      cn="все"
-      ssh_command_start='$ssh_command_start ; else $start_connect echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
-    elif [[ $cn =~ [^[2-9]{1}$] ]] ; then
-        ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
-    else
-      echo -e $BRed"Не определён номер коннекта!" $Color_Off
-    fi
-    local ssh_descript_start='echo -e $BWhite"Запускаем $BRed $cn $BWhite коннект на gbox-$gnum"$Color_Off ; '
-    ssh_descript=$ssh_descript_start
-    ssh_command=$ssh_command_start
-  }
 
-  func_stop_connect () {
-    local ssh_command_stop='kill `ps  flax |grep Duser.timezone.*stream.kernel.Bootloader |grep /home/ts/connect$cn/ |sed "s/\ \ */\ /g" | cut -d\  -f4,3`'
-    if [ -z $cn ] || [[ $cn == '1' ]]; then
-      cn=''
-      ssh_command_stop=$ssh_command_stop
-    elif [[ $cn == 'all' ]]; then
-      cn="все"
-      ssh_command_stop='pkill -f "^(java|./run).*Duser.timezone.*/home/ts/connect/lib/connect.jar"'
-    elif [[ $cn =~ [^[2-9]{1}$] ]] ; then
-      ssh_command_stop=$ssh_command_stop
-    else
-      echo -e $BRed"Не определён номер коннекта!" $Color_Off
-    fi
-    local ssh_descript_stop='echo -e $BWhite "Останавливаем $BRed $cn $BWhite коннект на gbox-$gnum! "$Color_Off'
-
-  }
 
   func_check_cases () {
     local g100_boxer=
 
     case $1 in
-    #connect restart
-    cr|cres|crestart) _command="restart"; case $2 in
-      --all|-a|a|all|"") cn="" ;;
-      -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
-      ^[1-9]{1}$) cn="$2" ;;
-      *) echo -n "Введите номер коннекта: " ; read cn ;;
-      esac ;; 
-    #connect_stop
-    cstop) _command="stop" ; case $2 in
-      --all|-a|a|all|"") cn="" ;;
-      -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
-      ^[1-9]{1}$) cn="$2" ;;
-      *) echo -n "Введите номер коннекта: " ; read cn ;;
-      esac ;; 
-    #connect_start
-    cstart) _command="start" ; case $2 in
-      --all|-a|a|all ) cn="all";;
-      -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
-      ^[1-9]{1}$) cn="$2" ;;
-      *) echo -n "Введите номер коннекта: " ; read cn ;;
-      esac ;;  
+    # #connect restart
+    # cr|cres|crestart) _command="restart"; case $2 in
+    #   --all|-a|a|all) cn="all" ;;
+    #   -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
+    #   ^[1-9]{1}$) cn="$2" ;;
+    #   *) echo -n "Введите номер коннекта: " ; read cn ;;
+    #   esac ;; 
+    # #connect_stop
+    # cstop) _command="stop" ; case $2 in
+    #   --all|-a|a|all) cn="all" ;;
+    #   -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
+    #   ^[1-9]{1}$) cn="$2" ;;
+    #   *) echo -n "Введите номер коннекта: " ; read cn ;;
+    #   esac ;; 
+    # #connect_start
+    # cstart) _command="start" ; case $2 in
+    #   --all|-a|a|all ) cn="all";;
+    #   -c|c|-cn|--cn|cn) if [ -z $3 ] ; then echo -n "Введите номер коннекта: " ; read cn ; else cn="$3" ; fi ;;
+    #   ^[1-9]{1}$) cn="$2" ;;
+    #   *) echo -n "Введите номер коннекта: " ; read cn ;;
+    #   esac ;;  
+    # Функция дря работы с сервисами на боксе, включая коннект
+    start|stop|restart) _command='$1' ; 
+      if [ -z $2 ]; then 
+        service="help"
+      else
+        service=$2
+      fi
+      if [ -z $3 ] ; then
+        cn=''
+      else
+        cn=$3
+      fi ;;   
     #connect count
     cc) _command="count" ;; 
     #send to server ip & port
@@ -233,23 +211,16 @@ local box_adr=
     cl) _command="log"; cn="$2"; what_log="$3" ;;  
     #send command
     sc|send|--send) _command="exec" ; command_is=(`echo -n "$2"`) ;;  
-    #check list
-    ckl) _command="check_list" ;; 
-    #copy from gbox
-    gc) _command="copy"; cn="$2" ;;
-    #copy from boxer
-    bc) _command="copy_boxer" ; cn="$2" ;;
-    #gbox back config + restart connect
-    gb) _command="box_back" ; cn="$2" ;;
     #open any configs
-    oc) _command="subl" ; config="$2" ;;
+    oc|open|--open) _command="open" ; config="$2" ;;
     #head version admin & connect
-    ver|v|version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else  g100_boxer="exist" && _command="version" ; fi ;;
+    ver|v|--version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else  g100_boxer="exist" && _command="version" ; fi ;;
     #interfaces
-    interfaces|inter|int) _command="interfaces" ;;
+    --interfaces|inter|int) _command="interfaces" ;;
     #updater
     update) _command="update" ;;
-    checker|check|chek|ck) _command="check_list" ;;
+    #check list
+    --checker|check|chek|ck|--checker) _command="check_list" ;;
     #admin open
     admin) _command="admin_open" ;;
     #подключение к боксу по тунелю
@@ -289,27 +260,32 @@ local box_adr=
 
 if [[ $1 = 'h' || $1 = '-h' || $1 = 'help' || $1 = '--help' ]]
   then
-  _command="101"
+  func_help $_func_name ; return 1
 elif [[ $1 = "update" ]] || [[ $1 = "updater" ]]
   then
   _command="update"
-else
-  func_check_digit $1 >/dev/null 
-  #return ${gnum} ${box_adr}
-fi
-if [ -z $2 ]
+elif [[ $1 =~ ^[0-9]+$ ]]
   then
-  _command="ssh"
-elif [[ "$2" -eq 1 ]] 
-  then
-  command="ssh"
-elif [[ "$2" =~ ^[2-9]{1}$ ]]
-  then
+    func_check_digit $1 >/dev/null #return ${gnum} ${box_adr}
+  
+  if [ -z $2 ]
+    then
     _command="ssh"
-    vpn_selector=(`echo -n "$2"`)
-    cn=$2
+  elif [[ "$2" -eq 1 ]] 
+    then
+    _command="ssh"
+  elif [[ "$2" =~ ^[2-9]{1}$ ]]
+    then
+      _command="ssh"
+      vpn_selector=(`echo -n "$2"`)
+      cn=$2
+  else
+    func_check_cases "$2" "$3" $4 $5
+  fi
+
 else
-  func_check_cases "$2" "$3" $4 $5
+  echo -e "${BRed}Ключ $1 отсутствует!$Color_Off"
+  func_help $_func_name ; return 1
 fi
 
 #определяем путь до файлов на 100.
@@ -348,14 +324,11 @@ esac
 
 case $_command in
 ssh) ssh_command=$ssh_command_default ;; # подключение по ссш
-restart) ;; #рестарт коннект(ов)
-stop) func_stop_connect $gnum $cn ;; #стоп коннект(ов)
-start) func_start_connect $gnum $cn ;; #старт коннект(ов)
 count) ssh_command=$ssh_command_count ;; #вывод количества коннектов и имена папок
 info) ;; #Вывод грепа по конфигам
 log) ;; #Вывод логов + multitail  
 check_list) ssh_command=$ssh_command_check ;; #Вывод чеклиста бокса
-subl) ;; #Открывает в саблайме необходимые настройки
+open) ;; #Открывает в саблайме необходимые настройки
 update) ssh_command=$ssh_command_update ;; #Запускает update на сотом
 admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;; #Открывает админку
 tun) ssh_command=$ssh_command_tun ;; #Идёт на бокс через тунель.
@@ -365,7 +338,9 @@ mus_local) ;; #Подключается к локальной базе бокс�
 version)  ssh_command=$ssh_command_version ;; # версия с боксера
 version_box) ssh_command=$ssh_command_version ;; #head версий с бокса
 exec) ssh_descript=$ssh_descript_exec ; ssh_command=$ssh_command_exec ;;  #выполняет переданную команду по ссш
-101) func_help $_func_name ;; #выводит хелп
+stop|stop|restart) func_stop_start_restart $_command $service $gnum $cn ;; #  Возвращает ссш команду исходя из введённых условий.
+
+101) func_help $_func_name ; return 1 ;; #выводит хелп
 ping) func_ping $gnum & return 1 ;; # Запускает цикл с постоянной проверкой на пинг бокса. Если бокс пингуется выводит нотифай.
 esac  
 
