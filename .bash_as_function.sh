@@ -114,9 +114,11 @@ function g () {
 _func_name="g"
 local gnum=
 local box_adr=
+local _return=0 #код ошибки по умолчанию
 
 #проверка наличия переменных
   variable_check $*
+
 
 #проверка первой переменной на digit или ip или gbox для g
   func_check_digit () {
@@ -136,36 +138,86 @@ local box_adr=
     fi
     pass_g $gnum;
   }
-
-  func_ping () {
+#Функция пингонатор. Пытается достучаться до бокса по впн, когда получается, выводит нотифай
+  func_ping () { 
     while true ; do 
     ping -c 1 gbox-$gnum >/dev/null 2>&1 && break 
     done
+    echo -e "${BGreen}gbox-$gnum IS AVEABLE NOW!$Color_Off "
     notify-send "GBOX-$gnum OK" "gbox-$gnum доступен. \n PING OFF" && return 0 
   }
 
-  interfaces_func () {  # Возвращает содержимое interfaces, если последняя дата изменения файла менее 24ч # Иначе возвращет shh_command
-    local local_interfaces_file=$(find ./$gnum/ -name interfaces -mtime -1 2>/dev/null)
-    stop=
+  func_interfaces () {  # Возвращает содержимое interfaces, если последняя дата изменения файла менее 24ч # Иначе возвращет shh_command
+
+    local local_interfaces_file=$(find ${PATH_FOR_GBOX_CONF}/$gnum/ -name interfaces -mtime -1 2>/dev/null)
+    
     if [ -z $local_interfaces_file ]
     then
       ssh_command=$ssh_command_interfaces
     else
-      cat $local_interfaces_file 
-    fi
-    echo $ssh_command
-    if [ -z $ssh_command ]
-      then
-      stop=1
-    else  
-      stop=0
+      cat $local_interfaces_file
+      _return=1 
     fi
   }
 
+  func_stop_start_restart () {
+      
+      g_connect_start_stoper () {
+        exit
+      }
+      g_box_start_stoper () {
+        case $_command in 
+          restart) ssh_command='echo $pass_g | sudo reboot' ;;
+          start|stop) echo -e "${BRed}Включение и выключение бокса по SSH не предусмотренно!$Color_Off" ; return 1 ;;
+          *) echo -e "Возможные варианты:\n -[restart]" ;;
+          esac   
+      }
+      g_services_start_stoper () {
+        case $service in 
+          apache) service="apache2" ;;
+          vpn) service="openvpn" ;;
+          samba) service='smbd' ;;
+          network|net) service='networking';;
+          *) service=$service ;;
+          esac
+          ssh_descript="Выполняем $_command $service на gbox-$gnum"
+          ssh_command="echo $pass_g | sudo -S service $service $_command" 
+          _command=`echo "$command $service"`
+      }
+
+
+
+
+    case $service in 
+      connect) g_connect_start_stoper $_command ;; #Работает с коннектом
+      gbox) g_box_start_stoper $_command ;; # работать будет только рестарт!!!  
+      help) echo 'help'; _return=1 ;;
+      *) g_services_start_stoper $_command ;; #Парсит остальный выбор. 
+      # apache) ;;
+      # mysql) ;;
+      # network) ;;
+      # samba) ;;
+      # vpn) ;;
+      # ntp) ;;
+      # autofs) ;;
+      esac  
+  }
+
+  func_ssh_command_log () {
+    if [[ $connection == "box" ]]; then
+      if [[ $_command == 'ssh' ]]; then
+        ssh_command_log=$ssh_command_default
+      else 
+        ssh_descript="Отправляем команду - ${COLOR_RED}'$_command'${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})"
+        ssh_command_log="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr executed : $_command >> /home/ts/backup/tools/logins.log && $ssh_command"
+      fi
+      ssh_command="$ssh_command_log"
+    fi
+    func_connect_to $ssh_command
+  }
 
 
   func_check_cases () {
-    local g100_boxer=
 
     case $1 in
     # #connect restart
@@ -190,11 +242,11 @@ local box_adr=
     #   *) echo -n "Введите номер коннекта: " ; read cn ;;
     #   esac ;;  
     # Функция дря работы с сервисами на боксе, включая коннект
-    start|stop|restart) _command='$1' ; 
+    "restart"|"start"|"stop") _command="$1" 
       if [ -z $2 ]; then 
         service="help"
       else
-        service=$2
+        service='$2'
       fi
       if [ -z $3 ] ; then
         cn=''
@@ -214,9 +266,15 @@ local box_adr=
     #open any configs
     oc|open|--open) _command="open" ; config="$2" ;;
     #head version admin & connect
-    ver|v|--version)  if [[ "$2" = "box" ]] ; then _command="version_box" ; else  g100_boxer="exist" && _command="version" ; fi ;;
+    ver|v|--version)  if [ -z $2 ]; then g100_boxer="exist" ; _command="version"
+      elif [[ "$2" = "box" ]] ; then
+      _command="version_box" 
+      g100_boxer=
+      else
+          echo -e "${BRed}Параметр $2 не определён!" $Color_Off; _command=101
+      fi ;;
     #interfaces
-    --interfaces|inter|int) _command="interfaces" ;;
+    --interfaces|inter|int|interfaces) _command="interfaces" ;;
     #updater
     update) _command="update" ;;
     #check list
@@ -233,6 +291,7 @@ local box_adr=
         esac
     ;;
     ping) _command="ping" ;;
+
     h|-h|--h|help|-help|--help) _command="101" ;;
     #отправка непосредственно комманды
     *) _command="exec" ; command_is="$1";;
@@ -267,22 +326,12 @@ elif [[ $1 = "update" ]] || [[ $1 = "updater" ]]
 elif [[ $1 =~ ^[0-9]+$ ]]
   then
     func_check_digit $1 >/dev/null #return ${gnum} ${box_adr}
-  
-  if [ -z $2 ]
-    then
-    _command="ssh"
-  elif [[ "$2" -eq 1 ]] 
-    then
-    _command="ssh"
-  elif [[ "$2" =~ ^[2-9]{1}$ ]]
-    then
-      _command="ssh"
-      vpn_selector=(`echo -n "$2"`)
-      cn=$2
-  else
+    if [ -z $2 ]
+       then
+       _command="ssh"
+     else
     func_check_cases "$2" "$3" $4 $5
   fi
-
 else
   echo -e "${BRed}Ключ $1 отсутствует!$Color_Off"
   func_help $_func_name ; return 1
@@ -291,15 +340,15 @@ fi
 #определяем путь до файлов на 100.
 local path_g100_boxer="/home/support/bin/boxer/gbox-$gnum/home/ts/"
 if [ -z $g100_boxer ] ; then
+  g100_boxer=
+  else 
   g100_boxer=$path_g100_boxer
-  else
-    g100_boxer=""
 fi
 #
-
+local ssh_command=""
 local ssh_descript="Заходим на ${COLOR_BLUE}gbox-$gnum\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/$gnum/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS:\n$(nslookup gbox-$gnum) \n" 
 local ssh_command_default="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr  >> /home/ts/backup/tools/logins.log ; cat /etc/motd; cd connect$cn/ ; bash -l;"
-local ssh_command_row=""
+
 #отправка команды на прямую
 local ssh_descript_exec="Отправляем команду - ${COLOR_RED}$command_is${COLOR_NORMAL} на ${COLOR_BLUE}gbox-${gnum}\n${COLOR_NORMAL}Скважина ${COLOR_BLUE}$(grep well= $PATH_FOR_GBOX_CONF/${gnum}/connect.conf|sed s/well=//)\n${COLOR_NORMAL}Данные DNS\n$(nslookup gbox-${gnum})"
 local ssh_command_exec="[ -d /home/ts/backup/tools ] && echo `date` `whoami` from `hostname` and use $box_adr executed : $command_is >> /home/ts/backup/tools/logins.log && $command_is"
@@ -318,12 +367,12 @@ local ssh_command_interfaces='cd '${path_g100_boxer}'/ ; cat ../../etc/network/i
 
 
 case $_command in
-  check_list|info|count|update|tun|version) connection="g100" ;;
+  check_list|info|count|update|tun|version|interfaces) connection="g100" ;;
   *) connection="box" ;;
 esac
 
 case $_command in
-ssh) ssh_command=$ssh_command_default ;; # подключение по ссш
+#ssh) ssh_command=$ssh_command_default ;; # подключение по ссш
 count) ssh_command=$ssh_command_count ;; #вывод количества коннектов и имена папок
 info) ;; #Вывод грепа по конфигам
 log) ;; #Вывод логов + multitail  
@@ -332,7 +381,7 @@ open) ;; #Открывает в саблайме необходимые наст
 update) ssh_command=$ssh_command_update ;; #Запускает update на сотом
 admin_open) google-chrome "http://gbox-$gnum/" && return 1 ;; #Открывает админку
 tun) ssh_command=$ssh_command_tun ;; #Идёт на бокс через тунель.
-interfaces) interfaces_func $gnum $ssh_command_interfaces ; if [ $stop -eq 1 ]; then return 1 ; fi ;; #Выводин интерфейсы с 100, если фаил в локальной папке обновлялся не текущим днём
+interfaces) func_interfaces $gnum $ssh_command_interfaces ;; #Выводин интерфейсы с 100, если фаил в локальной папке обновлялся не текущим днём
 mys_sbor) ;; #проверяет порты и базу MYSQL для welldata или MSSQL для AMТ
 mus_local) ;; #Подключается к локальной базе бокса
 version)  ssh_command=$ssh_command_version ;; # версия с боксера
@@ -342,11 +391,15 @@ stop|stop|restart) func_stop_start_restart $_command $service $gnum $cn ;; #  В
 
 101) func_help $_func_name ; return 1 ;; #выводит хелп
 ping) func_ping $gnum & return 1 ;; # Запускает цикл с постоянной проверкой на пинг бокса. Если бокс пингуется выводит нотифай.
-esac  
+esac
 
-func_connect_to $ssh_command
+  if [ $_return -eq 1 ]; then
+    return 1;
+  else
+    func_ssh_command_log $ssh_command
+  fi
 
-  local error_num="$?"
+local error_num="$?"
   case "$error_num" in
     0) notify-send "GBOX-$gnum OK" "Соединение с gbox-$gnum завершено";;
     5) notify-send "GBOX-$gnum ERROR"  "Неправильный логин/пароль gbox-$gnum";;

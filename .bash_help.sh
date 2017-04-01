@@ -17,7 +17,7 @@ func_help () {
 func_help_g () {
 	echo -e " ================== g ====================
 Usage g:
-	g [#g] [#vpn|key|command] [key|#connect] <command>
+	g [#g] [key|command] [key|#connect] <command>
 
 Описание:
 	Расширенная функция для подключения к боксу по ssh.
@@ -225,3 +225,7 @@ func_help_gtest () {
 	"
 	return 1
 }
+    func_test_1 () {
+    date
+    echo -e $asd 
+  }
