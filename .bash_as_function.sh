@@ -91,16 +91,31 @@ function rsync_b  () {
 
   rsync_b_interactive () {
 
-    while [[ $box_num =~ [0-9]{2} ]]; do
-      echo -en $BWhite "Введите номер бокса для отправки файлов: " $Color_Off
-      local read box_num
+    local rsync_b_design="no"
+
+    while [[ $rsync_b_design == "no" ]]; do
+      local box_num=
+      local source_files=
+      local destination=
+
+      while ! [[ $box_num =~ [0-9]{2} ]]; do
+        echo -en $BWhite"Введите номер бокса для отправки файлов: " $Color_Off &&  read box_num  
+      done
+      echo "Выбран gbox-$box_num"
+
+      echo -en $BBlue"Что отправляем(фаил/дирректория): " $Color_Off &&  read source_files
+      
+      if [ -f $source_files ] ; then  
+        echo "Отправляем фаил : $source_files"
+      elif [ -d $source_files ]; then
+        echo "Отправляем папку : $source_files"
+      fi
+
+      echo -en $BGreen"Дирректория на боксе $box_num: " $Color_Off && read destination
+
+      echo "Итого отправляем $source_files на gbox-$box_num:$destination"
+      echo -n "Хотите продолжить (yes/no)" && read rsync_b_design
     done
-    while [ -f $source_files ] || [ -d $source_files ]; do
-    echo -en $BBlue"Что отправляем(фаил/дирректория): " $Color_Off
-      local read source_files
-    done
-    echo -en $BGreen"Дирректория на боксе $box_num: " $Color_Off
-    local read destination
 
     rsync_b_control_input
     
@@ -116,7 +131,7 @@ function rsync_b  () {
 
   }
 #Проверка что введено хоть что-то
-func_check_digit $*
+variable_check $*
 #Имя функции для хелпа
 local _func_name="rsync_b"
 if [[ $1 == "h" ]] || [[ $1 == "-h" ]]
