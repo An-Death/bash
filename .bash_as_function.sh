@@ -48,40 +48,90 @@ variable_check_digit () {
 
 #Синк  на бокс
 function rsync_b  () {
- 
-#переменные функции
 
-    local path=gbox-$1:$3
-    local f=$(basename "$2")
-#
-#проверка наличия необходимых переменных функции
-   if [ -z "$1" ] | [ -z "$2" ] | [ -z "$3" ]
-    then 
-     echo "Usage: 
-#1 - номер бокса, #2 - фаил, #3 - куда на боксе"
-     return 1
-   fi
-   if ! [ -f "$2" ] || [ -d "$2" ]
-    then
-      ${SETCOLOR_FAILURE}
-      echo "$2 такого файла или каталога не существует!"
+  rsync_b_function () {
+      #
+    local path=gbox-$box_num:$destination
+    local f=`basename   "$source_files"`
+
+      ${SETCOLOR_CYAN}
+      echo "
+      Copy file $f to $path
+      "
       ${SETCOLOR_NORMAL}
-      return 1
-    fi
-#
-${SETCOLOR_CYAN}
-  echo "
-Copy file $f to $path
-"
-${SETCOLOR_NORMAL}
 
 
-  pass_g $1 >/dev/null
+      pass_g $box_num >/dev/null
+
+      rsync -azuvP "$source_files" --rsh="sshpass -p "$pass_for_g" ssh -l ts " $path/
+
+      color_check
+  }
+
+  rsync_b_control_input () {
+    if [ -z "$box_num" ] | [ -z "$source_files" ] | [ -z "$destination" ]
+        then 
+        echo -e "Usage:\n  #1 - номер бокса, #2 - фаил, #3 - куда на боксе"
+         return 1
+      fi
+      if ! ([ -f "$destination" ] || [ -d "$destination" ])
+      then
+        ${SETCOLOR_FAILURE}
+        echo "$destination такого файла или каталога не существует!"
+        ${SETCOLOR_NORMAL}
+        return 1
+      fi
+      if ! ( `ping -c 2 gbox-$box_num > /dev/null` ); then
+        echo -e $COLOR_RED"Сервер gbox-$box_num недоступен" $Color_Off
+        return 1
+      fi
+
+   rsync_b_function   
+  }
+
+  rsync_b_interactive () {
+
+    while [[ $box_num =~ [0-9]{2} ]]; do
+      echo -en $BWhite "Введите номер бокса для отправки файлов: " $Color_Off
+      local read box_num
+    done
+    while [ -f $source_files ] || [ -d $source_files ]; do
+    echo -en $BBlue"Что отправляем(фаил/дирректория): " $Color_Off
+      local read source_files
+    done
+    echo -en $BGreen"Дирректория на боксе $box_num: " $Color_Off
+    local read destination
+
+    rsync_b_control_input
     
-  rsync -azuvP "$2" --rsh="sshpass -p "$pass_for_g" ssh -l ts " $path/
+    }
 
-  color_check
+  rsync_b_cli () {
+
+    local box_num=$1
+    local source_files=$2
+    local destination=$3
+
+    rsync_b_control_input
+
+  }
+#Проверка что введено хоть что-то
+func_check_digit $*
+#Имя функции для хелпа
+local _func_name="rsync_b"
+if [[ $1 == "h" ]] || [[ $1 == "-h" ]]
+  then
+  func_help _func_name
+  return 1
+elif [[ $1 == "-i" ]] || [[ $1 == "--interactive" ]]
+  then
+  rsync_b_interactive
+else
+  rsync_b_cli
+fi
+
 }
+
 #функция для подключения к боксам
 func_connect_to () {
    
@@ -162,22 +212,56 @@ local _return=0 #код ошибки по умолчанию
 
   func_stop_start_restart () {
       
-      g_connect_start_stoper () {
-        exit
-      }
-      g_box_start_stoper () {
+    g_connect_start_stoper () {
+      #Запуск коннекта осуществляется на основе или из файла start_connect.sh
+      local ssh_command_start='start_connect=$(find /home/ts/ -type f -name start_connect.sh -executable); if [ -z $start_connect ] ; then echo -e "\e[31;1;3;4m" "Фаил $start_connect отсутствует, или не исполняемый!\n Провертьте фаил!" -e "\e[0m" && ls -la'
+      
+      if [ -z $cn ] || [[ $cn == "1" ]] ; then
+        cn=''
+        ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
+      elif [[ $ch == "all" ]] ; then
+        cn="все"
+        ssh_command_start='$ssh_command_start ; else $start_connect echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
+      elif [[ $cn =~ [^[2-9]{1}$] ]] ; then
+          ssh_command_start='$ssh_command_start ; else starter="grep connect$cn/ $start_connect" ; $starter echo -e "\e[32;1m" "PID процесса $!" "\e[0m"; fi'
+      else
+        echo -e $BRed"Не определён номер коннекта!" $Color_Off
+      fi
+      
+      local ssh_descript_start="${BWhite}Запускаем$BRed ${cn}${BWhite}коннект на gbox-$gnum!$Color_Off ; "
+      
+      ssh_descript=$ssh_descript_start
+      ssh_command=$ssh_command_start
+
+    }
+
+    g_connect_stop_restart() {
+
+      case $_command in 
+        "restart") _cut='cut -d " " -f4,3' ;;
+        "stop") _cut='cut -d " " -f4,3';;
+        *) echo "help";;
+      esac
+    _command=`echo "$_command $service $cn"`
+    
+    }
+
+    g_box_start_stoper () {
+
         case $_command in 
-          restart) ssh_command='echo $pass_g | sudo reboot' ;;
+          "restart") ssh_command='echo $pass_g | sudo reboot' ;;
           start|stop) echo -e "${BRed}Включение и выключение бокса по SSH не предусмотренно!$Color_Off" ; return 1 ;;
           *) echo -e "Возможные варианты:\n -[restart]" ;;
           esac   
+          _command=`echo "$command gbox-$num"`
       }
+
       g_services_start_stoper () {
         case $service in 
           apache) service="apache2" ;;
           vpn) service="openvpn" ;;
           samba) service='smbd' ;;
-          network|net) service='networking';;
+          network|net|networking) service='networking';;
           *) service=$service ;;
           esac
           ssh_descript="Выполняем $_command $service на gbox-$gnum"
@@ -185,22 +269,13 @@ local _return=0 #код ошибки по умолчанию
           _command=`echo "$command $service"`
       }
 
-
-
-
     case $service in 
       connect) g_connect_start_stoper $_command ;; #Работает с коннектом
       gbox) g_box_start_stoper $_command ;; # работать будет только рестарт!!!  
       help) echo 'help'; _return=1 ;;
       *) g_services_start_stoper $_command ;; #Парсит остальный выбор. 
-      # apache) ;;
-      # mysql) ;;
-      # network) ;;
-      # samba) ;;
-      # vpn) ;;
-      # ntp) ;;
-      # autofs) ;;
-      esac  
+    esac
+
   }
 
   func_ssh_command_log () {
