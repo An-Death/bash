@@ -8,6 +8,12 @@ readonly color_bwhielt='echo -en \e[1;37m'
 readonly color_off='echo -en \e[0m'
 #скрипт для фикса  данных по литологии/мадлогу на сервакак в соотвествии с эталонной таблицей.
 
+if [ -z $1 ]
+	then
+	echo -e "\nВведите шорткат сервера\n"
+	exit
+fi
+
 source_file=$(find ~/ -name .bash_connection_info.sh 2>/dev/null | grep "bash_connection_info")
 # while ! [ -f ${path_for_scr}/.bash_connection_info.sh ]; do
 #     $color_bwhielt
@@ -16,16 +22,13 @@ source_file=$(find ~/ -name .bash_connection_info.sh 2>/dev/null | grep "bash_co
 #     $color_off
 # done
 if [ -f $source_file ]; then
+	echo -e $color_yellow'\nЗагружаем либы...'$color_off
 	. $source_file
 else 
-	echo "Фаил .bash_connection_info не найден!"
+	echo "Фаил $source_file не найден!"
 fi
 
-if [ -z $1 ]
-	then
-	echo -e "\nВведите шорткат сервера\n"
-	exit
-fi
+
 
  mysql_quere="
 
@@ -41,12 +44,13 @@ begin
 /* 1 часть. 
 Чиста таблиц от лишних данных
 */
-/*
+
 	DELETE FROM WITS_LITHLOG_IDX WHERE id IN (SELECT idx_id FROM WITS_LITHLOG_DATA WHERE mnemonic LIKE 'CODELITH%' AND value>200);
 	DELETE FROM WITS_MUDLOG_IDX WHERE id IN (SELECT idx_id FROM WITS_MUDLOG_DATA WHERE mnemonic LIKE 'CODELITH%' AND value>200);
-	DELETE FROM WITS_LITHLOG_DATA WHERE idx_id IN (SELECT wd.idx_id WHERE WITS_LITHLOG_DATA wd LEFT OUTER JOIN WITS_LITHLOG_IDX wi ON (wi.id=wd.idx_id) WHERE wi.id IS NULL);
-	DELETE FROM WITS_MUDLOG_DATA WHERE idx_id IN (SELECT wd.idx_id WHERE WITS_MUDLOG_DATA wd LEFT OUTER JOIN WITS_MUDLOG_IDX wi ON (wi.id=wd.idx_id) WHERE wi.id IS NULL);
-*/
+	DELETE wd FROM WITS_LITHLOG_DATA wd LEFT OUTER JOIN WITS_LITHLOG_IDX wi ON (wi.id=wd.idx_id) WHERE wi.id IS NULL;
+	DELETE wd FROM WITS_MUDLOG_DATA wd LEFT OUTER JOIN WITS_MUDLOG_IDX wi ON (wi.id=wd.idx_id) WHERE wi.id IS NULL;
+
+
 /* Создаём таблицу с комментами
 Таблица с комментами
 */
@@ -242,8 +246,8 @@ begin
         DELETE FROM lba_image where idx_id not in (select id from lba_image_idx);
 end;
 
-DROP PROCEDURE if exists change_value_procedure_200;
-	create procedure change_value_procedure_200()
+DROP PROCEDURE if exists change_value_procedure;
+	create procedure change_value_procedure()
 	begin
 		set @@sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 
@@ -272,7 +276,7 @@ delimiter ;
 
 
 call prepeare_base;
-call change_value_procedure_200;
+call change_value_procedure;
 call clear_the_way_for_new;
 
 
@@ -280,7 +284,7 @@ call clear_the_way_for_new;
 call delete_tables;
 */
 
-drop procedure if exists change_value_procedure_200;
+drop procedure if exists change_value_procedure;
 drop procedure if exists clear;
 drop procedure if exists prepeare_base;
 drop procedure if exists clear_the_way_for_new;
@@ -309,7 +313,7 @@ UPDATE WITS_MUDLOG_IMAGE SET idx_id=idx_id+10;
 
 mysql_connect=$(getServerInfo "mysql_not_safe" $1)
 # изменение базы для бэкапа h5
-mysql_connect=$(echo $mysql_connect | sed 's/WMLS/WMLS_h5/g')
+#mysql_connect=$(echo $mysql_connect)
 mysql_dump=$(echo $mysql_connect | sed 's/mysql/mysqldump/g')
 echo -en "\nВыбран сервер: " 
 $color_green
@@ -325,14 +329,35 @@ $color_yellow
 echo -e "Подготавливаем таблицу... "
 $color_off
 
-$mysql_connect -A -e "$mysql_quere" 
-$mysql_connect -A -e "$mysql_update_id_quere" 
+	if ! ( find /tmp/ -name server_$1.dump -atime 1  1>&2 2>/dev/null )
+		then
+		$mysql_dump WITS_LITHLOG_IDX WITS_MUDLOG_IDX  WITS_MUDLOG_LITH_TYPE WITS_LITHLOG_DATA WITS_MUDLOG_DATA  > /tmp/server_$1.dump
+		$color_green 
+			echo "Создан дамп /tmp/server_$1.dump"
+		$color_off
+	else
+		echo -ne $color_bwhielt"Дамп уже создан и ему менее 1 часа." $color_off 
+		while true 
+		do
+			echo -en " (yes/no) : "
+			read _answer
+			case $_answer in
+				yes) $mysql_dump WITS_LITHLOG_IDX WITS_MUDLOG_IDX  WITS_MUDLOG_LITH_TYPE WITS_LITHLOG_DATA WITS_MUDLOG_DATA  > /tmp/server_$1.dump
+					$color_green 
+						echo "Создан дамп /tmp/server_$1.dump"
+					$color_off
+					break ;;
+				no) break ;;
+				q) break ;;
+				*) continue ;;
+			esac
+		done
+	fi
 
-$mysql_dump WITS_LITHLOG_IDX WITS_MUDLOG_IDX WITS_MUDLOG_IMAGE_IDX WITS_MUDLOG_IMAGE lba_image_idx lba_image WITS_MUDLOG_LITH_TYPE WITS_LITHLOG_DATA WITS_MUDLOG_DATA  > /tmp/H5.dump
-if [ -f  /tmp/H5.dump ] ; then
-	$color_green 
-	echo "Создан дамп /tmp/H5.dump"
-	 $color_off
+if [ -f  /tmp/server_$1.dump ] ; then
+	$mysql_connect -A -e "$mysql_quere" 
+	#$mysql_connect -A -e "$mysql_update_id_quere" 
 else
-	$color_red "Ошибка. Дамп не создан"
+	$color_red "Ошибка. Дамп не создан" $color_off
+	exit
 fi
