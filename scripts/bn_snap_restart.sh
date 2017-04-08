@@ -9,7 +9,7 @@ source ~/Документы/scr/source/data.cfg
 
   mysql_connect_to_database="mysql $sql_bn_connect -A"  
   connect_to_server_ssh="sshpass -p $pass_bn_serv ssh -o StrictHostKeyChecking=no $host_bn_serv"
-  request="select ws.health_address from WITS_WELL ww inner join WITS_WELLBORE wb on (ww.id=wb.well_id) inner join WITS_SOURCE ws on (ws.id=ww.source_id) inner join WITS_WELL_PROP wp on (wb.well_id=wp.well_id and wp.status_id=3 and wb.status_id=3) ;"
+  request="select ww.health_address from WITS_WELL ww inner join WITS_WELLBORE wb on (ww.id=wb.well_id) inner join WITS_SOURCE ws on (ws.id=ww.source_id) inner join WITS_WELL_PROP wp on (wb.well_id=wp.well_id and wp.status_id=3 and wb.status_id=3) ;"
 #для ребута по порту
   ports=$($mysql_connect_to_database -e "$request" 2>/dev/null |grep -o -E :[0-9]{4} | tr -d  ':' ) 
 # Для ребута царичан.
