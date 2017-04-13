@@ -342,7 +342,8 @@ local _return=0 #код ошибки по умолчанию
         cn=''
       else
         cn=$3
-      fi ;;   
+      fi ;;
+    [0-9]{1}) cn=$2 ;;   
     #connect count
     cc) _command="count" ;; 
     #send to server ip & port
@@ -701,13 +702,13 @@ conv () {
 
   variable_check $*
 
-    if [ $1 = 'help' ] || [ $1 = 'h' ] || [ $1 = '--help' ] || [ $1 = '-h' ] 
+    if [ "$1" = 'help' ] || [ "$1" = 'h' ] || [ "$1" = '--help' ] || [ "$1" = '-h' ] 
       then
       func_help $_func_name ; return 1
-    elif [ -f $1 ]
+    elif [ -f "$1" ]
       then
         original_file="$1"
-    elif ! [ -f $1 ]
+    elif ! [ -f "$1" ]
       then
         echo "Фаил $1 отсутствует!"
         return 1
@@ -899,7 +900,7 @@ alarms_function () {
 }
 
 # g_off в периоде
-g_off_p () {
+g_off_r () {
 
   local default="n igs bn gn ssk e 4 sggf"
   local cycle_counter=1
