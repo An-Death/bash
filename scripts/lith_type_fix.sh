@@ -8,24 +8,33 @@ readonly color_bwhielt='echo -en \e[1;37m'
 readonly color_off='echo -en \e[0m'
 #скрипт для фикса  данных по литологии/мадлогу на сервакак в соотвествии с эталонной таблицей.
 
+
 if [ -z $1 ]
 	then
 	echo -e "\nВведите шорткат сервера\n"
 	exit
 fi
+source_file="/home/as/Документы/python/SQLalchemy/lit-mud_patch/WITS_MUDLOG_LITH_TYPE_NEW.src"
+if ! [ -f $source_file ]
+	then
+	echo -e $color_red"Отсутствует фаил с данными для таблицы!!"$color_off
+	exit
+fi
 
-source_file=$(find ~/ -name .bash_connection_info.sh 2>/dev/null | grep "bash_connection_info")
+
+connection_file=$(find ~/ -name .bash_connection_info.sh 2>/dev/null | grep "bash_connection_info")
 # while ! [ -f ${path_for_scr}/.bash_connection_info.sh ]; do
 #     $color_bwhielt
 #     echo -e "Необходимо подключить сурс-фаил 'bash_connection_info'."
 #     echo -en "Введите путь до файла: " ; read path_for_scr
 #     $color_off
 # done
-if [ -f $source_file ]; then
+if [ -f $connection_file ]; then
 	echo -e $color_yellow'\nЗагружаем либы...'$color_off
-	. $source_file
+	. $connection_file
 else 
-	echo "Фаил $source_file не найден!"
+	echo "Фаил $connection_file не найден!"
+	exit
 fi
 
 
@@ -78,86 +87,11 @@ begin
 	  PRIMARY KEY id (id)
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-	INSERT INTO WITS_MUDLOG_LITH_TYPE_NEW VALUES ( 1, 'dispersed chert', 'рассеянный кремень', 1 ), 
-( 2, 'chert', 'кремень', 1 ), 
-( 3, 'silicified claystone', 'окремнелый аргиллит ', 2 ), 
-( 4, 'shale (clay)', 'сланец (глина)', 3 ), 
-( 5, 'silty shale', 'алевритистая глина', 4 ), 
-( 6, 'sandy shale', 'песчанистая глина', 5 ), 
-( 7, 'marl', 'мергель', 6 ), 
-( 8, 'silty marl', 'алевритистый мергель', 7 ), 
-( 9, 'sandy marl', 'песчанистый мергель', 8 ), 
-( 10, 'silt', 'алеврит', 9 ), 
-( 11, 'fine grained sand', 'песок мелкозернистый', 10 ), 
-( 12, 'sand', 'песок', 11 ), 
-( 13, 'Coarse grained sand', 'песок крупнозернистый', 12 ), 
-( 14, 'pebbles', 'галька', 13 ), 
-( 15, 'gravels', 'гравий', 14 ), 
-( 16, 'siltstone', 'алевролит', 15 ), 
-( 17, 'sandstone', 'песчаник', 16 ), 
-( 18, 'conglomerate', 'конгломерат', 17 ), 
-( 19, 'breccia', 'брекчия', 18 ), 
-( 20, 'limestone (argillaceous)', 'известняк глинистый ', 19 ), 
-( 21, 'limestone (w chert nodule)', 'известняк с кремниевыми конкрециями', NULL ), 
-( 22, 'limestone (silicified)', 'известняк кремнистый', NULL ), 
-( 23, 'limestone (dolomitic)', 'Известняк доломитистый', 22 ), 
-( 24, 'Limestone (chalk)', 'Известняк мел', NULL ), 
-( 25, 'Limestone (general)', 'известняк', 24 ), 
-( 26, 'mudstone', 'Аргиллит известковистый', NULL ), 
-( 27, 'wackstone', 'Мергель пелитоморфный', NULL ), 
-( 28, 'packstone', 'Известняк обломочный', NULL ), 
-( 29, 'grainstone', 'Известняк зернистый ', NULL ), 
-( 30, 'boundstone', 'Известняк строматолитовый', NULL ), 
-( 31, 'Dolomite calcareous', 'Доломит известковистый', 30 ), 
-( 32, 'dolomite', 'доломит', 31 ), 
-( 33, 'gypsum', 'гипс', 32 ), 
-( 34, 'Na,K,Mg salts ', 'Каменная соль', 33 ), 
-( 35, 'coal', 'уголь', 34 ), 
-( 36, 'Extrusive rocks', 'вулканические породы', 35 ), 
-( 37, 'Intrusive rocks', 'интрузивные породы', 36 ), 
-( 38, 'Metamorphic rocks', 'метаморфические породы', 37 ), 
-( 39, 'Volcanic elements', 'Вулканогенный материал', 38 ), 
-( 40, 'unassigned', 'Не классифицировано', 39 ), 
-( 41, 'Sand (clay)', 'Песок глинистый ', 40 ), 
-( 42, 'chalk', 'мел', 41 ), 
-( 43, 'anhydrite', 'ангидрит', 42 ), 
-( 44, 'phosphates', 'фосфаты', 43 ), 
-( 45, 'peat', 'торф', 44 ), 
-( 46, 'Crystalline basement', 'кристал. фундамент', 45 ), 
-( 47, 'quartzite', 'кварцит', 46 ), 
-( 48, 'argillite', 'аргиллит', 2 ), 
-( 49, 'clay', 'глина', NULL ), 
-( 50, 'glauconite', 'глауконит', 48 ), 
-( 51, 'dolomite argillaceous', 'доломит глинистый', NULL ), 
-( 52, 'iltstone interbedded with sandstone', 'алевролит с прослоями песчаника', NULL ), 
-( 53, 'siltstone interbedded with mudstone', 'алевролит с прослоями аргиллита', NULL ), 
-( 54, 'Siltstone interbedded with mudstone', 'алевролит с прослоями аргиллита', NULL ), 
-( 55, 'mudstone interbedded with siltstone', 'аргиллит с прослоями алевролита', NULL ), 
-( 56, 'mudstone interbedded with sandstone', 'аргиллит с прослоями песчаника', NULL ), 
-( 57, 'sandstone interbedded with siltstone', 'песчаник с прослоями алевролита', NULL ), 
-( 58, 'bituminous mudstone', 'аргиллит битуминозный', NULL ), 
-( 59, 'fine grained sandstone', 'песчаник мелкозернистый', NULL ), 
-( 60, 'gravelite', 'гравелит', NULL ), 
-( 61, 'interbedded sandstone and siltstone', 'переслаивание песчаника, аргиллита и алевролита', NULL ), 
-( 62, 'sandstone interbedded with mudstone', 'песчаник с прослоями аргиллита', NULL ), 
-( 63, 'Siltstone interbedded with mudstone and siltstone', 'песчаник с прослоями аргиллита и алевролита', NULL ), 
-( 64, 'mudstone interbedded with siltstone and sandstone', 'аргиллит с прослоями алевролита и песчаника', NULL ), 
-( 65, 'granite', 'гранит', NULL ), 
-( 66, 'dolerite', 'долерит', NULL ), 
-( 67, 'siltstone interbedded with shale', 'Алевролит с прослоями глин', NULL ), 
-( 68, 'siltstone interbedded with shale', 'Глина с прослоями алевролита', NULL ), 
-( 69, 'slate', 'сланец', NULL ), 
-( 70, 'other', 'прочее', NULL ), 
-( 71, 'weathering crust', 'кора выветривания', NULL ), 
-( 72, 'dolomite anhydrite', 'Доломит ангидрит', NULL ), 
-( 73, 'shale interbedded with siltstone', 'Глина с прослоями алевролита', NULL ), 
-( 74, 'cement', 'цемент', NULL ), 
-( -1000, 'no data ', 'данные отсутствуют', NULL ), 
-( -2000, 'incorrect data ', 'ошибка ввода данных', NULL );
+	INSERT INTO WITS_MUDLOG_LITH_TYPE_NEW VALUES $var_wmltn
 
 UPDATE WITS_MUDLOG_LITH_TYPE_NEW wn left outer join WITS_MUDLOG_LITH_TYPE wo on (wn.name=wo.name or wn.name_ru=wo.name_ru) set wn.file_name = wo.file_name;
 
-
+/*
  /* 3 часть.
  Сопоставляем NEW таблицу с имеющейся
  */ 
@@ -197,7 +131,7 @@ UPDATE WITS_MUDLOG_LITH_TYPE_NEW wn left outer join WITS_MUDLOG_LITH_TYPE wo on 
 	/* выводим совпадения по породам.*/
 	select comment from COMMENT_TABLE_FOR_LITH_TYPE_FIX where id=3;
 	SELECT * FROM LITH_TYPE_DIFF_COUNTER;
-
+*/
 
 
 end; 
@@ -250,6 +184,7 @@ DROP PROCEDURE if exists change_value_procedure;
 	create procedure change_value_procedure()
 	begin
 		set @@sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+		SET SQL_BIG_SELECTS=1;
 
 		DROP TABLE IF EXISTS WITS_CHANGING_IDS;
 		 create TEMPORARY TABLE WITS_CHANGING_IDS as (select wld.lith_in as LITH_IN, wmd.lith_in as MUD_IN, wmlt.id as old_id ,wmltnew.id as new_id, wmlt.name as old_name, wmltnew.name as new_name from WITS_MUDLOG_LITH_TYPE wmlt LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_MUDLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wmd ON (wmlt.id=wmd.value) LEFT OUTER JOIN ( select value, COUNT(value) as lith_in from WITS_LITHLOG_DATA where mnemonic like 'CODELITH%' GROUP by value) as wld ON (wmlt.id=wld.value) left outer join WITS_MUDLOG_LITH_TYPE_NEW wmltnew on (wmltnew.name=wmlt.name) where  wmlt.id>0 and wmltnew.id!=wmlt.id group by wmltnew.id order by wmlt.id); 
@@ -276,9 +211,9 @@ delimiter ;
 
 
 call prepeare_base;
-call change_value_procedure;
+/*call change_value_procedure;
 call clear_the_way_for_new;
-
+*/
 
 /*
 call delete_tables;
