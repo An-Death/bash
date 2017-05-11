@@ -71,13 +71,13 @@ function rsync_b  () {
   rsync_b_control_input () {
     if [ -z "$box_num" ] | [ -z "$source_files" ] | [ -z "$destination" ]
         then 
-        echo -e "Usage:\n  #1 - номер бокса, #2 - фаил, #3 - куда на боксе"
+        echo -e "Usage:\n  '#1' - номер бокса, '#2' - фаил, '#3' - куда на боксе"
          return 1
       fi
-      if ! ([ -f "$destination" ] || [ -d "$destination" ])
+      if ! ([ -f "$source_files" ] || [ -d "$source_files" ])
       then
         ${SETCOLOR_FAILURE}
-        echo "$destination такого файла или каталога не существует!"
+        echo "$source_files такого файла или каталога не существует!"
         ${SETCOLOR_NORMAL}
         return 1
       fi
@@ -114,7 +114,7 @@ function rsync_b  () {
       echo -en $BGreen"Дирректория на боксе $box_num: " $Color_Off && read destination
 
       echo "Итого отправляем $source_files на gbox-$box_num:$destination"
-      echo -n "Хотите продолжить (yes/no)" && read rsync_b_design
+      echo -n "Хотите продолжить (yes/no): " && read rsync_b_design
     done
 
     rsync_b_control_input
@@ -142,7 +142,7 @@ elif [[ $1 == "-i" ]] || [[ $1 == "--interactive" ]]
   then
   rsync_b_interactive
 else
-  rsync_b_cli
+  rsync_b_cli $1 $2 $3
 fi
 
 }
@@ -343,7 +343,7 @@ local _return=0 #код ошибки по умолчанию
       else
         cn=$3
       fi ;;
-    [0-9]{1}) cn=$2 ;;   
+    #[0-9]) cn=$2 ;;   
     #connect count
     cc) _command="count" ;; 
     #send to server ip & port
@@ -369,7 +369,7 @@ local _return=0 #код ошибки по умолчанию
     #updater
     update) _command="update" ;;
     #check list
-    --checker|check|chek|ck|--checker) _command="check_list" ;;
+    --checker|check|chek|ck|checker) _command="check_list" ;;
     #admin open
     admin) _command="admin_open" ;;
     #подключение к боксу по тунелю
@@ -417,9 +417,10 @@ elif [[ $1 = "update" ]] || [[ $1 = "updater" ]]
 elif [[ $1 =~ ^[0-9]+$ ]]
   then
     func_check_digit $1 >/dev/null #return ${gnum} ${box_adr}
-    if [ -z $2 ]
+    if [ -z $2 ] || [[ $2 =~ ^[0-9]{1}$ ]]
        then
        _command="ssh"
+       cn=$2 
      else
     func_check_cases "$2" "$3" $4 $5
   fi
@@ -737,7 +738,7 @@ conv () {
     w) iconv -f WINDOWS-1251 -t UTF-8 -o "$output_file" "$original_file";;
     *) iconv -f WINDOWS-1251 -t UTF-8 -o "$output_file" "$original_file";;
    esac
-  echo "Convert completed!"
+  echo "Convert complited!"
   color_check
 }
 
@@ -753,7 +754,7 @@ con_kill () {
 
 }
 
-pbc () {
+pbc () { #Скрипт для создания классов в sqlalchemy
   variable_check $*
   local table=$1
 
@@ -913,8 +914,10 @@ g_off_r () {
 
   while true
     do 
+      clear
       echo "Цикл #$cycle_counter"
       echo -e "$BGreen====================================="`date`"=======================================$Color_Off" 
+
       for f in ${period}
         do
         echo -e "\n" && g_off $f
@@ -924,12 +927,15 @@ g_off_r () {
 
 }
 
-#боксы проекта
 get_boxes () {
-
+#боксы проекта. Создаёт файлик со списком боксов, но не отработает со скважинами где нет ГТИ -_-
   variable_check $*
 
   cdwork && g_off $1 | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box.src
+
+    _box () {
+    cdwork && cat box.src
+  }
   
   if [ -z $2 ]
     then
@@ -940,11 +946,49 @@ get_boxes () {
   else
     return 0
   fi
+}
 
-  _box () {
-    cdwork && cat box.src
-  }
+connect_new_well() {
+  #Подключаем удалённо новую скважину. Приминительно только для gbox-43, там очень плохая связь
 
+  if [ -z $1 ] || [ -z "$2" ]; then
+    echo -ne $BWhite"Введите номер бокса:  "$Color_Off 
+    read gnum
+    echo -ne $BBlue"Введите имя скважины:  "$Color_Off
+    read well_name
+  else
+    gnum=$1
+    well_name="$2"
+  fi
+
+  path_connect="${PATH_FOR_GBOX_CONF}/$gnum/connect.conf"
+  old_well_name=`grep well= ${PATH_FOR_GBOX_CONF}/$gnum/connect.conf | sed 's/well=//'`
+  last_updated=`find ${PATH_FOR_GBOX_CONF}/$gnum/ -name connect.conf -mtime -1 > /dev/null`
+  plugin_list="ReportProxy.jar OpsLogProxy.jar MudlogProxy.jar"
+  rm_var="/home/ts/backup/update_gbox.sh -b var ; rm -r /home/ts/connect/var/* ; for plugin in plugin_list ; do rm /home/ts/connect/plugin/$plugin ; done"
+  complited=true
+  ssh_pass=`pass_hack $gnum`
+  copy=false
+
+  while $complited; do
+    ping -c 1 gbox-$gnum > /dev/null && #if [ -z $last_updated ]; then
+     #gc $gnum
+    #fi && 
+    if [[ "$old_well_name" == "$well_name" ]] ; then
+      echo "Имя скважины в конфиге то же, что и задано! Путь до файлов в конфиге не меняется!"; 
+    else 
+      echo "Обновляем имя скважины с $old_well_name на $well_name"
+      sed "s/$old_well_name/$well_name/g" -i $path_connect 
+    fi && 
+    while true
+    do 
+      if ! $copy; then
+        rsync -azuvP $path_connect --rsh="sshpass -p $ssh_pass ssh -l ts" gbox-$gnum:/home/ts/connect/ && copy=true
+      elif $copy ; then
+        sshpass -p $ssh_pass ssh ts@gbox-$gnum -t "if ! [ -z "'`ls /home/ts/connect/var/`'" ] ; then $rm_var ; fi && /home/ts/backup/update_gbox.sh -s stop ; /home/ts/start_connect.sh " && complited=false && break
+      fi
+    done
+  done
 }
 
 
@@ -1041,4 +1085,13 @@ test_opt () {
               fi
               shift $(($OPTIND - 1))
               printf "Remaining arguments are: %s\n" "$*"
+}
+
+
+func_ls(){
+
+  
+  echo $1
+  echo $2
+  echo $#  
 }
