@@ -225,7 +225,3 @@ func_help_gtest () {
 	"
 	return 1
 }
-    func_test_1 () {
-    date
-    echo -e $asd 
-  }

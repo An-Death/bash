@@ -71,7 +71,7 @@ function rsync_b  () {
   rsync_b_control_input () {
     if [ -z "$box_num" ] | [ -z "$source_files" ] | [ -z "$destination" ]
         then 
-        echo -e "Usage:\n  '#1' - номер бокса, '#2' - фаил, '#3' - куда на боксе"
+        echo -e "Usage:\n  #1 - номер бокса, #2 - куда на боксе #3 - файлы/папки для отправки"
          return 1
       fi
       if ! ([ -f "$source_files" ] || [ -d "$source_files" ])
@@ -124,8 +124,8 @@ function rsync_b  () {
   rsync_b_cli () {
 
     local box_num=$1
-    local source_files=$2
-    local destination=$3
+    local source_files=$3
+    local destination=$2
 
     rsync_b_control_input
 
@@ -133,10 +133,11 @@ function rsync_b  () {
 #Проверка что введено хоть что-то
 variable_check $*
 #Имя функции для хелпа
-local _func_name="rsync_b"
+#local _func_name="rsync_b"
+
 if [[ $1 == "h" ]] || [[ $1 == "-h" ]]
   then
-  func_help _func_name
+  func_help $FUNCNAME
   return 1
 elif [[ $1 == "-i" ]] || [[ $1 == "--interactive" ]]
   then
@@ -176,7 +177,6 @@ func_connect_to () {
 # для отправки команды всегда необходимо указывать 3и переменных, где 1 - номер бокса, 2 - номер коннекта, 3 - комманда в ковычках.
 function g () {
 
-_func_name="g"
 local gnum=
 local box_adr=
 local _return=0 #код ошибки по умолчанию
@@ -410,7 +410,7 @@ local _return=0 #код ошибки по умолчанию
 
 if [[ $1 = 'h' || $1 = '-h' || $1 = 'help' || $1 = '--help' ]]
   then
-  func_help $_func_name ; return 1
+  func_help $FUNCNAME ; return 1
 elif [[ $1 = "update" ]] || [[ $1 = "updater" ]]
   then
   _command="update"
@@ -508,7 +508,6 @@ local error_num="$?"
 
 function gping () {
   # переменные
-  _func_name="gping"
   gbox_num=$1
   local choose=
   local cn=
@@ -534,7 +533,6 @@ function gping () {
       sborshik) do_command=$sborshik_ping ; func_connect_to $do_command  ;;
       camera) do_command=$cameras_ping ; func_connect_to $do_command  ;;
       moxa) do_command=$moxa_ping ; func_connect_to $do_command  ;;
-      101) func_help $_func_name ;;
     esac
 
 
@@ -550,7 +548,7 @@ function gping () {
             return 1;
         elif [ $1 = "h" ] || [ $1 = "help" ] || [ $1 = "-h" ] || [ $1 = "--help" ] || [[ $gbox_num =~ ^[^0-9]{1,3}$ ]]
           then
-            choose=101
+            func_help $FUNCNAME
             break
         elif [ -z $2 ] 
           then
@@ -698,14 +696,14 @@ bn_snap_restat () {
 #Конвертер
 conv () {
 
-  local _func_name="conv"
+  #local _func_name="conv"
   local convert=
 
   variable_check $*
 
     if [ "$1" = 'help' ] || [ "$1" = 'h' ] || [ "$1" = '--help' ] || [ "$1" = '-h' ] 
       then
-      func_help $_func_name ; return 1
+      func_help $FUNCNAME ; return 1
     elif [ -f "$1" ]
       then
         original_file="$1"
@@ -1085,13 +1083,4 @@ test_opt () {
               fi
               shift $(($OPTIND - 1))
               printf "Remaining arguments are: %s\n" "$*"
-}
-
-
-func_ls(){
-
-  
-  echo $1
-  echo $2
-  echo $#  
 }
