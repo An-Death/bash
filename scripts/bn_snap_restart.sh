@@ -13,9 +13,6 @@ source ~/Документы/scr/source/data.cfg
 #для ребута по порту
   ports=$($mysql_connect_to_database -e "$request" 2>/dev/null |grep -o -E :[0-9]{4} | tr -d  ':' ) 
 # Для ребута царичан.
-  health_address=$($mysql_connect_to_database -e "$request"	2>/dev/null	| grep 172.28 | sed 's/http:\/\///' )
+  health_address=$($mysql_connect_to_database -e "$request"	2>/dev/null	| grep '/health' | sed 's/http:\/\///' )
+  date
   $connect_to_server_ssh 'for f in '$ports' ; do curl http://127.0.0.1:${f}/axis?snapshots=on > /dev/null 2>&1 && echo  "$f - OK" || echo "$f - FAIL" ; done & for health in  '$health_address' ; do  curl http://${health}/axis?snapshots=on > /dev/null 2>&1 && echo  "$health - OK" || echo "$health - FAIL" ; done &'
-
-# Для ребута царичан.
-
-  #$connect_to_server_ssh 'for health in  '$health_address' ; do  curl http://${health}/axis?snapshots=on > /dev/null 2>&1 && echo  "$health - OK" || echo "$health - FAIL" ; done'
