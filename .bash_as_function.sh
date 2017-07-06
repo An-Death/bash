@@ -52,18 +52,18 @@ function rsync_b  () {
   rsync_b_function () {
       #
     local path=gbox-$box_num:$destination
-    local f=`basename   "$source_files"`
+    local f=`basename  "$source_files"`
 
       ${SETCOLOR_CYAN}
       echo "
-      Copy file $f to $path
+      Copy file \"$f\" to $path
       "
       ${SETCOLOR_NORMAL}
 
 
       pass_g $box_num >/dev/null
 
-      rsync -azuvP "$source_files" --rsh="sshpass -p "$pass_for_g" ssh -l ts " $path/
+      rsync -azuvP "$source_files" --rsh="sshpass -p "$pass_for_g" ssh -l ts " $path
 
       color_check
   }
@@ -71,7 +71,7 @@ function rsync_b  () {
   rsync_b_control_input () {
     if [ -z "$box_num" ] | [ -z "$source_files" ] | [ -z "$destination" ]
         then 
-        echo -e "Usage:\n  #1 - номер бокса, #2 - куда на боксе #3 - файлы/папки для отправки"
+        echo -e "Usage:\n  #1 - номер бокса, #2 - файлы/папки для отправки #3 - куда на боксе"
          return 1
       fi
       if ! ([ -f "$source_files" ] || [ -d "$source_files" ])
@@ -120,30 +120,31 @@ function rsync_b  () {
     rsync_b_control_input
     
     }
-
-  rsync_b_cli () {
-
-    local box_num=$1
-    local source_files=$3
-    local destination=$2
-
-    rsync_b_control_input
-
-  }
 #Проверка что введено хоть что-то
 variable_check $*
 #Имя функции для хелпа
 #local _func_name="rsync_b"
 
-if [[ $1 == "h" ]] || [[ $1 == "-h" ]]
+if [[ "$1" == "h" ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]
   then
   func_help $FUNCNAME
   return 1
-elif [[ $1 == "-i" ]] || [[ $1 == "--interactive" ]]
+elif [[ "$1" == "-i" ]] || [[ "$1" == "--interactive" ]]
   then
   rsync_b_interactive
+elif [[ "$1" == "-s" ]] || [[ "$1" == "--simple" ]]
+  then
+  local row_input="$2"
+  local input=`echo $row_input | sed 's/\// /g'`
+  local box_num=`echo $input | awk '{ print $1 }'`  
+  local source_files="$row_input"
+  local destination=`echo $row_input | sed "s/$box_num/connect/g"`
+  rsync_b_control_input
 else
-  rsync_b_cli $1 $2 $3
+  local box_num=$1
+  local source_files=$2
+  local destination=$3
+  rsync_b_control_input
 fi
 
 }
@@ -177,6 +178,7 @@ func_connect_to () {
 # для отправки команды всегда необходимо указывать 3и переменных, где 1 - номер бокса, 2 - номер коннекта, 3 - комманда в ковычках.
 function g () {
 
+local _func_name="$FUNCNAME"
 local gnum=
 local box_adr=
 local _return=0 #код ошибки по умолчанию
@@ -204,12 +206,17 @@ local _return=0 #код ошибки по умолчанию
     pass_g $gnum;
   }
 #Функция пингонатор. Пытается достучаться до бокса по впн, когда получается, выводит нотифай
+# todo Переделать под возможность пинговать бокс по айпишнику
   func_ping () { 
     while true ; do 
     ping -c 1 gbox-$gnum >/dev/null 2>&1 && break 
     done
-    echo -e "${BGreen}gbox-$gnum IS AVEABLE NOW!$Color_Off "
-    notify-send "GBOX-$gnum OK" "gbox-$gnum доступен. \n PING OFF" && return 0 
+    #echo -e "${BGreen}gbox-$gnum IS AVEABLE NOW!$Color_Off " >> /dev/pts/[1-9]{2}
+    for pts in `ls -1 /dev/pts/ | grep -v ptmx`
+      do echo -e "${BGreen}gbox-$gnum IS AVEABLE NOW!$Color_Off " >> /dev/pts/$pts 
+      done
+      notify-send echo -e $BGreen"GBOX-$gnum OK" "gbox-$gnum доступен. \n PING OFF"
+    return 0 
   }
 
   func_interfaces () {  # Возвращает содержимое interfaces, если последняя дата изменения файла менее 24ч # Иначе возвращет shh_command
@@ -252,9 +259,11 @@ local _return=0 #код ошибки по умолчанию
 
     g_connect_stop_restart() {
 
+      stop='/home/ts/connect{$cn}/connect.sh -a stop'
+      start='/home/ts/connect{$cn}/connect.sh -a start'
       case $_command in 
-        "restart") _cut='cut -d " " -f4,3' ;;
-        "stop") _cut='cut -d " " -f4,3';;
+        "restart") ssh_command="$stop | grep -q'Service stopped successfully' && echo -e $BGreen 'Connect Stopped!' $Color_Off || echo -e $BRed 'Error cannot stop connect!' $Color_Off ; sleep 15 ; $start | grep -q 'Service started successfully' && echo -e $BGreen 'Connect started!' $Color_Off || echo -e $BRed 'Error cannot start connect!' $Color_Off" ;;
+        "stop") ssh_command="$stop | grep -q'Service stopped successfully' && echo -e $BGreen 'Connect Stopped!' $Color_Off || echo -e $BRed 'Error cannot stop connect!' $Color_Off " ;;
         *) echo "help";;
       esac
     _command=`echo "$_command $service $cn"`
@@ -336,7 +345,7 @@ local _return=0 #код ошибки по умолчанию
       if [ -z $2 ]; then 
         service="help"
       else
-        service='$2'
+        service="$2"
       fi
       if [ -z $3 ] ; then
         cn=''
@@ -357,7 +366,7 @@ local _return=0 #код ошибки по умолчанию
     #open any configs
     oc|open|--open) _command="open" ; config="$2" ;;
     #head version admin & connect
-    ver|v|--version)  if [ -z $2 ]; then g100_boxer="exist" ; _command="version"
+    ver|v|--version)  if [ -z "$2" ]; then g100_boxer="exist" ; _command="version"
       elif [[ "$2" = "box" ]] ; then
       _command="version_box" 
       g100_boxer=
@@ -365,7 +374,7 @@ local _return=0 #код ошибки по умолчанию
           echo -e "${BRed}Параметр $2 не определён!" $Color_Off; _command=101
       fi ;;
     #interfaces
-    --interfaces|inter|int|interfaces) _command="interfaces" ;;
+    --interfaces|inter|int|interfaces|net|network|networking) _command="interfaces" ;;
     #updater
     update) _command="update" ;;
     #check list
@@ -411,16 +420,16 @@ local _return=0 #код ошибки по умолчанию
 if [[ $1 = 'h' || $1 = '-h' || $1 = 'help' || $1 = '--help' ]]
   then
   func_help $FUNCNAME ; return 1
-elif [[ $1 = "update" ]] || [[ $1 = "updater" ]]
+elif [[ "$1" = "update" ]] || [[ "$1" = "updater" ]]
   then
   _command="update"
-elif [[ $1 =~ ^[0-9]+$ ]]
+elif [[ "$1" =~ ^[0-9]+$ ]]
   then
     func_check_digit $1 >/dev/null #return ${gnum} ${box_adr}
-    if [ -z $2 ] || [[ $2 =~ ^[0-9]{1}$ ]]
+    if [ -z "$2" ] || [[ "$2" =~ ^[0-9]{1}$ ]]
        then
        _command="ssh"
-       cn=$2 
+       cn="$2" 
      else
     func_check_cases "$2" "$3" $4 $5
   fi
@@ -508,12 +517,11 @@ local error_num="$?"
 
 function gping () {
   # переменные
-  gbox_num=$1
+  local _func_name=$FUNCNAME
+  local gbox_num=$1
   local choose=
   local cn=
-  local cam_num=
-  local grep_cam=
-  local stay=
+
   
   func_do_command_unterpritator () {
 
@@ -540,88 +548,73 @@ function gping () {
 
   # проверка ввода
 
-    while [ 1 ]
-      do
-        if [ -z $1 ]
-          then
-            echo "-Аргумент #1 не был передан функции."
-            return 1;
-        elif [ $1 = "h" ] || [ $1 = "help" ] || [ $1 = "-h" ] || [ $1 = "--help" ] || [[ $gbox_num =~ ^[^0-9]{1,3}$ ]]
-          then
-            func_help $FUNCNAME
-            break
-        elif [ -z $2 ] 
-          then
-          choose=row
-          break
-        else
-          case "$2" in
-              sbor|s) choose=sborshik
-                      if [ -z $3 ]
-                        then 
-                        cn=  
-                      elif [ $3 = "-c" ] || [ $3 = 'cn' ]
-                        then
-                          if [ -z $4 ]
-                            then
-                              echo "Введите номер коннекта" ; read cn
-                            else
-                              cn=$4
-                          fi
-                      elif [[ $3 =~ ^[0-9]{1}$ ]]
-                        then
-                        cn=$3
-                      fi
-                      break ;;   
-              cam|c) choose=camera
-                      if [ -z $3 ]
-                        then
-                          cn=
-                      elif [ $3 = "-c" ] || [ $3 = 'cn' ]
-                        then
-                          if [ -z $4 ]
-                            then
-                              echo "Введите номер коннекта" ; read cn
-                            else
-                              cn=$4
-                          fi    
-                      elif [[ $3 =~ ^[0-9]{1}$ ]]
-                        then
-                        cn=$3
-                      fi
-                      break ;; 
-              moxa|mox|m) choose=moxa
-                      if [ -z $3 ]
-                        then
-                          cn=
-                      elif [ $3 = "-c" ] || [ $3 = 'cn' ]
-                        then
-                          if [ -z $4 ]
-                            then
-                              echo "Введите номер коннекта" ; read cn
-                            else
-                              cn=$4
-                          fi    
-                      else
-                        cn=$3
-                      fi
-                      break ;;                       
-              *) choose=101
-                      break ;;
-            esac
-        fi             
-      done
-  # проверка на спец комманды/ не актуально
-  #for input_var in $@
-  #do
-  # if [ $input_var = '--stay' ]
-  #    then
-  #      stay=' bash -l '
-  #  else
-  #    stay=
-  #  fi
-  #done
-  #Здесь должно быть определение камер, но пока нет)
+
+  if [ -z $1 ]
+    then
+    echo "-Аргумент #1 не был передан функции."
+    return 1;
+  elif [ $1 = "h" ] || [ $1 = "help" ] || [ $1 = "-h" ] || [ $1 = "--help" ] || [[ $gbox_num =~ ^[^0-9]{1,3}$ ]]
+    then
+    func_help $FUNCNAME
+  elif [ -z $2 ] 
+    then
+    choose=row
+  elif ! [ -z $2 ]
+    then
+    case "$2" in
+      sbor|s) choose=sborshik
+              if [ -z $3 ]
+                then 
+                cn=  
+              elif [ $3 = "-c" ] || [ $3 = 'cn' ]
+                then
+                  if [ -z $4 ]
+                    then
+                      echo "Введите номер коннекта" ; read cn
+                    else
+                      cn=$4
+                  fi
+              elif [[ $3 =~ ^[0-9]{1}$ ]]
+                then
+                cn=$3
+              fi
+              ;;   
+      cam|c) choose=camera
+              if [ -z $3 ]
+                then
+                  cn=
+              elif [ $3 = "-c" ] || [ $3 = 'cn' ]
+                then
+                  if [ -z $4 ]
+                    then
+                      echo "Введите номер коннекта" ; read cn
+                    else
+                      cn=$4
+                  fi    
+              elif [[ $3 =~ ^[0-9]{1}$ ]]
+                then
+                cn=$3
+              fi
+              ;; 
+      moxa|mox|m) choose=moxa
+              if [ -z $3 ]
+                then
+                  cn=
+              elif [ $3 = "-c" ] || [ $3 = 'cn' ]
+                then
+                  if [ -z $4 ]
+                    then
+                      echo "Введите номер коннекта" ; read cn
+                    else
+                      cn=$4
+                  fi    
+              else
+                cn=$3
+              fi
+               ;;                       
+      *) func_help $FUNCNAME ;;
+    esac
+  fi             
 
   func_do_command_unterpritator $choose
 }
@@ -754,9 +747,11 @@ con_kill () {
 
 pbc () { #Скрипт для создания классов в sqlalchemy
   variable_check $*
-  local table=$1
 
-    mysql -h $base_path -u $base_username -p${base_password} $base_name -e "desc $table" |  awk '{ print $1 " = " "Column(" $2 ")" $3 $4 }' | sed -e 's/bigint(20)/Integer/;s/varchar/String/;s/double/DOUBLE/;s/datetime/DateTime/;s/float/Float/'
+  local table=$2
+  local base=$1
+  #mysql -h $base_path -u $base_username -p${base_password} $base_name -e
+  mys $base e "desc $table"  |  awk '{ print "Column( "$1", "$2" )" }' | sed -e ';s/timestamp/TIMESTAMP/;s/bigint([0-9]*)/Integer/;s/varchar/String/;s/double/DOUBLE/;s/datetime/DateTime/;s/float/Float/;s/[Ii]nt([0-9]*)/Integer/;s/text/String/'
 
 }
 
@@ -929,7 +924,7 @@ get_boxes () {
 #боксы проекта. Создаёт файлик со списком боксов, но не отработает со скважинами где нет ГТИ -_-
   variable_check $*
 
-  cdwork && g_off $1 | awk '{ print $6 }'| cut -c 6-8 |sed 's/-//' | grep [[:digit:]] > box.src
+  cdwork && g_off $1 | grep -oE "GBOX-[0-9]{1,3}" | grep -oE "[0-9]{1,3}" > box.src
 
     _box () {
     cdwork && cat box.src
@@ -944,6 +939,17 @@ get_boxes () {
   else
     return 0
   fi
+}
+
+check_option_for_g() {
+
+  for g in `cat box.src`
+    do 
+      if ping -c 1 gbox-$g >/dev/null ; then
+        g $g "grep mudlog_send_cutting_report connect/connect.conf" >/dev/null && echo -e $g "\e[42m"" ЕСТЬ " "\e[0m" || echo -e $g "\e[41m" 'НЕТУ ОПЦИИ' "\e[0m" 
+      else echo "$g - не доступен" 
+      fi 
+    done
 }
 
 connect_new_well() {
@@ -1084,3 +1090,4 @@ test_opt () {
               shift $(($OPTIND - 1))
               printf "Remaining arguments are: %s\n" "$*"
 }
+
